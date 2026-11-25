@@ -1,5 +1,6 @@
 import { assess, blank, confirmSale, totals, today, sample, clean, paisa, id } from './core.js';
 import { topics, signals } from './guide.js';
+import { assistantPage, wireAssistant, clearAssistant } from './assistant.js';
 
 const key = 'arthsaathi.v1';
 const app = document.querySelector('#app');
@@ -27,7 +28,7 @@ const dateText = (date, options = {day:'numeric',month:'short'}) => new Intl.Dat
 const month = () => today().slice(0, 7);
 const layouts = () => [
   ['overview','▦',t('Overview','अवलोकन')], ['shield','◇','MoneyShield'], ['manager','▥','MoneyManager'],
-  ['guide','◫','MoneyGuide'], ['hub','⌘',t('Intelligence Hub','इंटेलिजेंस हब')]
+  ['guide','◫','MoneyGuide'], ['hub','⌘',t('Intelligence Hub','इंटेलिजेंस हब')], ['assistant','✦',t('Ask ArthSaathi','ArthSaathi से पूछें')]
 ];
 const section = (title, details) => `<div class="section-head"><h1>${title}</h1><p>${details}</p></div>`;
 const btn = (action, label, cls = '') => `<button type="button" class="${cls}" data-action="${action}">${label}</button>`;
@@ -70,7 +71,7 @@ function render() {
   document.documentElement.lang = hi ? 'hi' : 'en';
   document.querySelector('.skip').textContent = t('Skip to content','मुख्य सामग्री पर जाएँ');
   if (!state) { app.innerHTML = onboarding(); return; }
-  const pages = {overview, shield, manager, guide, hub, report, privacy};
+  const pages = {overview, shield, manager, guide, hub, report, privacy, assistant:()=>assistantPage(hi, api)};
   app.innerHTML = `<div class="layout"><aside class="sidebar">${logo()}
     <div class="side-caption">${t('WORKSPACE','कार्यक्षेत्र')}</div>
     <nav aria-label="${t('Workspace','कार्यक्षेत्र')}">${layouts().map(([name, icon, title]) => `<button type="button" data-route="${name}" ${name === route ? 'aria-current="page"' : ''}><span class="nav-icon" aria-hidden="true">${icon}</span>${title}</button>`).join('')}</nav>
@@ -105,7 +106,7 @@ function chart() {
     <p class="chart-detail" id="chart-detail" role="status">${t('Select a day for exact amounts.','सटीक राशि के लिए दिन चुनें।')}</p></article>`;
 }
 function overview() {
-  return `<div class="hero"><div><span class="eyebrow">${t('YOUR FINANCIAL WORKSPACE','आपका आर्थिक कार्यक्षेत्र')}</span><h1>${t('Your money, in focus.','आपके पैसों की साफ़ तस्वीर।')}</h1><p>${t('Track what comes in, see what goes out, and check suspicious payments before you act.','आमदनी और खर्च देखें, और किसी संदिग्ध भुगतान पर कदम उठाने से पहले उसकी जाँच करें।')}</p><div class="hero-actions">${nav('shield',t('Check a message','संदेश जाँचें'),'primary')}${nav('manager',t('Open ledger','बहीखाता खोलें'),'outline')}</div></div><div class="hero-art" aria-hidden="true"><div class="orbit"></div><div class="orbit two"></div><div class="orbit three"></div><div class="hero-mark"><img src="./mark.svg" alt=""></div><i></i><b></b></div></div>
+  return `<div class="hero"><div><span class="eyebrow">${t('YOUR FINANCIAL WORKSPACE','आपका आर्थिक कार्यक्षेत्र')}</span><h1>${t('Your money, in focus.','आपके पैसों की साफ़ तस्वीर।')}</h1><p>${t('Track what comes in, see what goes out, and check suspicious payments before you act.','आमदनी और खर्च देखें, और किसी संदिग्ध भुगतान पर कदम उठाने से पहले उसकी जाँच करें।')}</p><div class="hero-actions">${nav('shield',t('Check a message','संदेश जाँचें'),'primary')}${nav('manager',t('Open ledger','बहीखाता खोलें'),'outline')}${nav('assistant',t('Ask ArthSaathi','ArthSaathi से पूछें'),'outline')}</div></div><div class="hero-art" aria-hidden="true"><div class="orbit"></div><div class="orbit two"></div><div class="orbit three"></div><div class="hero-mark"><img src="./mark.svg" alt=""></div><i></i><b></b></div></div>
     <div class="overview-title"><h2>${t('Financial snapshot','आर्थिक झलक')}</h2>${modeSwitch()}</div>${stats()}<div class="dashboard-grid">${chart()}<article class="card spotlight"><span class="stat-icon mint" aria-hidden="true">⌘</span><h2>${t('Intelligence Hub','इंटेलिजेंस हब')}</h2><p>${t('Connect a suspicious payment message to an open sale and record your own confirmation after checking your bank app.','संदिग्ध भुगतान संदेश को लंबित बिक्री से जोड़ें और बैंक ऐप देखने के बाद अपनी पुष्टि दर्ज करें।')}</p><div class="spot-count"><strong>${state.sales.filter(s=>s.status==='pending').length}</strong> ${t('sales awaiting payment','बिक्री के भुगतान बाकी')}</div>${nav('hub',t('Open Intelligence Hub','इंटेलिजेंस हब खोलें'),'secondary')}</article></div>`;
 }
 function showRisk(scan) {
@@ -205,12 +206,13 @@ app.addEventListener('click', e => {
   }
   if (action==='delete' && window.confirm(t('Permanently delete this browser’s ArthSaathi data?','इस ब्राउज़र से ArthSaathi का डेटा हमेशा के लिए मिटाएँ?'))) {
     try { localStorage.removeItem(key); } catch { toast(t('Browser blocked data deletion.','ब्राउज़र ने डेटा मिटाने से रोका।')); return; }
-    state=null; draft=''; result=null; selectedSale=''; answer=''; navigate('overview');
+    clearAssistant(); state=null; draft=''; result=null; selectedSale=''; answer=''; navigate('overview');
   }
 });
 app.addEventListener('submit', async e => {
   e.preventDefault();
   const form=e.target;
+  if(form.id==='assistant-form') return;
   const data=new FormData(form);
   const get=name=>clean(data.get(name));
   const type=form.id;
@@ -268,9 +270,10 @@ window.addEventListener('storage', event=>{
   try {
     state=JSON.parse(localStorage.getItem(key));
     if(state) { mode=state.mode||'business'; hi=state.language==='hi'; }
-    else { route='overview'; draft=''; result=null; selectedSale=''; }
+    else { clearAssistant(); route='overview'; draft=''; result=null; selectedSale=''; }
     render();
   } catch { storageError=true; render(); }
 });
+wireAssistant(app, render, ()=>route==='assistant' && Boolean(state));
 render();
-fetch('./api/status').then(r=>r.ok?r.json():null).then(value=>{api=value?.llm===true;if(route==='guide') render();}).catch(()=>{});
+fetch('./api/status').then(r=>r.ok?r.json():null).then(value=>{api=value?.llm===true;if(['guide','assistant'].includes(route)) render();}).catch(()=>{});

@@ -54,3 +54,11 @@ Data lives in the current browser profile and origin. It does not sync across de
 ## Covexcode
 
 Covexcode is named on the [HackNova event listing](https://devnovate.co/event/hacknova-2026). No Covexcode tool or command was available in this workspace, so it was not used. If the organisers provide access, open this project in the tool using their onboarding instructions. A bounded task for the team is to add a missing Hindi URL-rule test or review the sale confirmation path. Review the diff, run `npm test` and `npm run build`, and record the actual tool use for submission. Keep API keys and real financial data out of prompts.
+
+## Ask ArthSaathi
+
+Open **Ask ArthSaathi** from the dashboard. English, Hindi and Marathi are available in the assistant. The rest of the app supports English and Hindi. Use **Speak** to transcribe a question, review the text, then submit it. **Listen** reads an answer aloud when a matching voice is available. Microphone input depends on browser support and permission and may use the browser vendor's speech service. Typed chat remains available.
+
+The assistant searches two bundled collections at runtime: a multilingual product handbook and curated lessons from RBI, SEBI Investor and India's National Cyber Crime Reporting Portal. It can explain the current product, open the relevant screen and link official sources. This uses retrieval and reviewed text. No custom model was trained or fine-tuned.
+
+To enable web answers, start the optional Node server as described above with an OpenAI model that supports the Responses API web search tool. In the assistant panel, opt in to sending questions. **Search the web** forces a source-backed lookup. Ordinary questions use the bundled answer when matched and can use web search as a fallback. Web results show clickable citations when the provider returns them. The feature can decline a question or fail if the provider, model or evidence is unavailable. No prior turns, transaction records or voice recordings are sent by the assistant endpoint. The static hosted version can run the bundled assistant and supported browser voice controls. Web answers require the Node deployment. [OpenAI web search documentation](https://developers.openai.com/api/docs/guides/tools-web-search?api-mode=responses)
