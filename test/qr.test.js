@@ -23,6 +23,14 @@ test('payment comparisons surface a wrong UPI ID and amount without confirming a
   assert.throws(()=>paymentExpectations('','2.499'),/expectedAmount/);
 });
 
+test('QR fixture alerts on the scanned recipient only, even when the amount matches',()=>{
+  const {payee,amount,risk}=assessQr('upi://pay?pa=collection%40demo&am=2450.00&cu=INR',official);
+  assert.equal(payee,'collection@demo');
+  assert.equal(amount,245000);
+  assert.equal(risk.level,'high');
+  assert.deepEqual(risk.signals,['qrPayeeMismatch','qrPay']);
+});
+
 test('ambiguous fields, invalid currency and app actions are flagged',()=>{
   const repeated=assessQr(upi+'&pa=other@demo',official);
   assert.ok(repeated.risk.signals.includes('qrAmbiguous'));

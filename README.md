@@ -61,7 +61,7 @@ Data lives in the current browser profile and origin. It does not sync across de
 
 Covexcode CLI v1.18.0 was used on 25 November 2026 for a development-time QA review of MoneyShield’s fictional QR mismatch scenario. The CLI was connected to a local Qwen2.5 model. Its reply changed the scanned ID, so the team rejected that detail and added an exact-identifier regression check. The released app’s opening screen and dashboard link to the prompt, CLI reply, and verified result.
 
-[CLI usage evidence](https://arthsaathi-rosy.vercel.app/build-evidence.html) · [Official Covexcode release](https://github.com/HolboxAI/covexcode/releases/tag/v1.18.0)
+[CLI usage evidence](public/build-evidence.html) · [Official Covexcode release](https://github.com/HolboxAI/covexcode/releases/tag/v1.18.0)
 
 ## Ask ArthSaathi
 

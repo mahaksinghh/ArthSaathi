@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Covexcode CLI evidence | ArthSaathi</title>
+<link rel="icon" href="./mark.svg">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<main class="evidence-page">
+  <a class="secondary" href="./">Back to ArthSaathi</a>
+  <header class="evidence-hero">
+    <img src="./mark.svg" width="52" height="52" alt="">
+    <p>The Solvers · HackNova Track 1</p>
+    <h1>Covexcode CLI used for QA</h1>
+    <p>MoneyShield QR recipient mismatch · 25 November 2026</p>
+  </header>
+  <section class="card pane evidence-panel">
+    <h2>Recorded CLI session</h2>
+    <pre><code>$ covexcode --version
+covexcode 1.18.0</code></pre>
+    <p>Covexcode ran against a local Qwen2.5-0.5B-Instruct model. This is the prompt and reply captured during the review.</p>
+    <blockquote><strong>Prompt</strong><p>ArthSaathi QR QA: scanned ID collection@demo; expected ID meera@demo. Are the two IDs different? Answer yes or no, then state the IDs.</p></blockquote>
+    <blockquote><strong>CLI reply</strong><p>No, the two IDs are not the same. The first ID is "arthSaathi@demo" and the second ID is "meera@demo".</p></blockquote>
+  </section>
+  <section class="card pane evidence-panel">
+    <h2>Verified outcome</h2>
+    <p>The CLI reply changed the scanned ID. We rejected that detail and added an automated test that checks the exact scanned ID, <code>collection@demo</code>. The QR is flagged <strong>High risk</strong> when the expected UPI ID is <code>meera@demo</code>, even though the amount matches.</p>
+    <p>This was a development QA review. Only fictional payment details were used.</p>
+    <div class="actions"><a class="primary" href="./">Open MoneyShield in ArthSaathi</a><a class="secondary" href="https://github.com/HolboxAI/covexcode/releases/tag/v1.18.0" rel="noopener noreferrer">Official CLI release</a></div>
+  </section>
+</main>
+</body>
+</html>
