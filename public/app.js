@@ -1,24 +1,26 @@
-import { assess, blank, confirmSale, totals, today, sample, clean, paisa, id } from './core.js';
+import { assess, attachSaleQrReview, blank, confirmSale, totals, today, sample, clean, paisa, id } from './core.js';
 import { topics, signals, safetyActions } from './guide.js';
 import { assistantPage, wireAssistant, clearAssistant } from './assistant.js';
-import { qrPanel, wireQrPanel, clearQrPanel } from './qr-panel.js';
+import { qrPanel, wireQrPanel, clearQrPanel, prepareSaleQr } from './qr-panel.js';
+import { qrSignals } from './qr-risk.js';
 
 const key = 'arthsaathi.v1';
+const isolatedDemo = new URLSearchParams(location.search).get('demo')==='sale-qr';
 const receiptSample = 'Payment received: ₹2,450. Demo reference TX-2450. Check your transaction history in your UPI app.';
 const app = document.querySelector('#app');
 let state;
 let storageError = false;
-try { state = JSON.parse(localStorage.getItem(key)); } catch { storageError = true; }
-state = state?.entries && state?.sales ? state : null;
+try { if(!isolatedDemo) state = JSON.parse(localStorage.getItem(key)); } catch { storageError = true; }
+state = isolatedDemo ? blank(true) : state?.entries && state?.sales ? state : null;
 let hi = state?.language === 'hi';
 let mode = state?.mode === 'personal' ? 'personal' : 'business';
-let route = 'overview';
+let route = isolatedDemo ? 'hub' : 'overview';
 let shieldMode = 'message';
 let period = 7;
 let draft = '';
 let result = null;
 let selectedTopic = 'upi';
-let selectedSale = '';
+let selectedSale = isolatedDemo ? 'demo-sale' : '';
 let api = false;
 let answer = '';
 let busy = false;
@@ -41,6 +43,7 @@ const topicText = words => words[hi ? 1 : 0];
 
 function persist(next) {
   state = next;
+  if(isolatedDemo) return;
   try {
     localStorage.setItem(key, JSON.stringify(state));
     storageError = false;
@@ -68,6 +71,7 @@ function onboarding() {
     <h1>${t('Take charge of your everyday money.','अपने रोज़ के पैसों की कमान संभालें।')}</h1>
     <p>${t('Spot suspicious payment messages, keep a simple ledger, and know what to do before handing over a sale.','संदिग्ध भुगतान संदेश पहचानें, सरल बहीखाता रखें और बिक्री पूरी करने से पहले सही कदम जानें।')}</p>
     <div class="welcome-buttons">${btn('demo',t('Explore demo','डेमो देखें'),'primary')}${btn('empty',t('Start empty','खाली शुरुआत'),'secondary')}</div>
+    <a href="./mentor.html" class="outline project-evidence">${t('Why ArthSaathi?','ArthSaathi क्यों?')}</a>
     <a href="./build-evidence.html" class="outline project-evidence">${t('Covexcode CLI used for QA · View evidence','Covexcode CLI से QA · प्रमाण देखें')}</a>
     <small>${t('The demo uses fictional records. Your workspace stays in this browser.','डेमो में काल्पनिक रिकॉर्ड हैं। आपका डेटा इसी ब्राउज़र में रहता है।')}</small>
     </div><footer>THE SOLVERS · HACKNOVA TRACK 1</footer></main>`;
@@ -82,9 +86,9 @@ function render() {
     <nav aria-label="${t('Workspace','कार्यक्षेत्र')}">${layouts().map(([name, icon, title]) => `<button type="button" data-route="${name}" ${name === route ? 'aria-current="page"' : ''}><span class="nav-icon" aria-hidden="true">${icon}</span>${title}</button>`).join('')}</nav>
     <div class="side-bottom"><div class="side-caption">${t('SUPPORT','सहायता')}</div><nav aria-label="${t('Support','सहायता')}">${nav('report',`<span class="nav-icon" aria-hidden="true">⊕</span>${t('Report fraud','धोखाधड़ी की शिकायत')}`)}${nav('privacy',`<span class="nav-icon" aria-hidden="true">⚙</span>${t('Privacy & data','गोपनीयता और डेटा')}`)}</nav>
     <div class="team"><span>TS</span><div>The Solvers<small>HackNova · Track 1</small></div></div></div></aside>
-    <div class="workspace"><header class="top"><div class="crumb"><b>ArthSaathi</b><span> / </span>${layouts().find(row=>row[0]===route)?.[2] || (route==='report'?t('Report fraud','धोखाधड़ी की शिकायत'):t('Privacy & data','गोपनीयता और डेटा'))}</div><div class="top-actions">${state.demo ? `<span class="demo-dot">${t('Demo workspace','डेमो कार्यक्षेत्र')}</span>` : ''}${btn('language',t('हिन्दी','English'),'secondary language')}</div></header>
-    <main id="main" tabindex="-1">${storageError ? `<p role="alert" class="notice">${t('Browser storage is unavailable. Changes may be lost on reload.','ब्राउज़र स्टोरेज उपलब्ध नहीं है। पेज दोबारा खोलने पर बदलाव मिट सकते हैं।')}</p>` : ''}${pages[route]()}</main>
-    <footer class="foot">${t('ArthSaathi · Built by The Solvers','ArthSaathi · The Solvers द्वारा निर्मित')}<a href="./build-evidence.html">${t('Covexcode CLI · QA evidence','Covexcode CLI · QA प्रमाण')}</a><span>HackNova 2026 / Track 1</span></footer></div></div>`;
+    <div class="workspace"><header class="top"><div class="crumb"><b>ArthSaathi</b><span> / </span>${layouts().find(row=>row[0]===route)?.[2] || (route==='report'?t('Report fraud','धोखाधड़ी की शिकायत'):t('Privacy & data','गोपनीयता और डेटा'))}</div><div class="top-actions">${state.demo ? `<span class="demo-dot">${isolatedDemo?t('Isolated demo','अलग डेमो'):t('Demo workspace','डेमो कार्यक्षेत्र')}</span>` : ''}${btn('language',t('हिन्दी','English'),'secondary language')}</div></header>
+    <main id="main" tabindex="-1">${isolatedDemo?`<div class="demo-context"><span>${t('Fictional example. Refresh to start over.','काल्पनिक उदाहरण। फिर से शुरू करने के लिए रिफ्रेश करें।')}</span><a href="./">${t('Exit guided demo','गाइडेड डेमो से बाहर निकलें')}</a></div>`: ''}${storageError ? `<p role="alert" class="notice">${t('Browser storage is unavailable. Changes may be lost on reload.','ब्राउज़र स्टोरेज उपलब्ध नहीं है। पेज दोबारा खोलने पर बदलाव मिट सकते हैं।')}</p>` : ''}${pages[route]()}</main>
+    <footer class="foot">${t('ArthSaathi · Built by The Solvers','ArthSaathi · The Solvers द्वारा निर्मित')}<a href="./mentor.html">${t('Why ArthSaathi?','ArthSaathi क्यों?')}</a><a href="./build-evidence.html">${t('Covexcode CLI · QA evidence','Covexcode CLI · QA प्रमाण')}</a><span>HackNova 2026 / Track 1</span></footer></div></div>`;
 }
 function modeSwitch() {
   return `<div class="seg" aria-label="${t('Ledger mode','बहीखाता मोड')}">${['business','personal'].map(value=>`<button type="button" data-mode="${value}" aria-pressed="${mode===value}">${value==='business'?t('Business','व्यवसाय'):t('Personal','व्यक्तिगत')}</button>`).join('')}</div>`;
@@ -111,8 +115,9 @@ function chart() {
     <p class="chart-detail" id="chart-detail" role="status">${t('Select a day for exact amounts.','सटीक राशि के लिए दिन चुनें।')}</p></article>`;
 }
 function overview() {
-  return `<div class="hero"><div><span class="eyebrow">${t('YOUR FINANCIAL WORKSPACE','आपका आर्थिक कार्यक्षेत्र')}</span><h1>${t('Your money, in focus.','आपके पैसों की साफ़ तस्वीर।')}</h1><p>${t('Track what comes in, see what goes out, and check suspicious payments before you act.','आमदनी और खर्च देखें, और किसी संदिग्ध भुगतान पर कदम उठाने से पहले उसकी जाँच करें।')}</p><div class="hero-actions">${nav('shield',t('Check a message','संदेश जाँचें'),'primary')}${nav('manager',t('Open ledger','बहीखाता खोलें'),'outline')}${nav('assistant',t('Ask ArthSaathi','ArthSaathi से पूछें'),'outline')}</div></div><div class="hero-art" aria-hidden="true"><div class="orbit"></div><div class="orbit two"></div><div class="orbit three"></div><div class="hero-mark"><img src="./mark.svg" alt=""></div><i></i><b></b></div></div>
-    <a class="secondary project-evidence" href="./build-evidence.html">${t('Covexcode CLI used for QA · View evidence','Covexcode CLI से QA · प्रमाण देखें')}</a><div class="overview-title"><h2>${t('Financial snapshot','आर्थिक झलक')}</h2>${modeSwitch()}</div>${stats()}<div class="dashboard-grid">${chart()}<article class="card spotlight"><span class="stat-icon mint" aria-hidden="true">⌘</span><h2>${t('Intelligence Hub','इंटेलिजेंस हब')}</h2><p>${t('Connect a suspicious payment message to an open sale and record your own confirmation after checking your bank app.','संदिग्ध भुगतान संदेश को लंबित बिक्री से जोड़ें और बैंक ऐप देखने के बाद अपनी पुष्टि दर्ज करें।')}</p><div class="spot-count"><strong>${state.sales.filter(s=>s.status==='pending').length}</strong> ${t('sales awaiting payment','बिक्री के भुगतान बाकी')}</div>${nav('hub',t('Open Intelligence Hub','इंटेलिजेंस हब खोलें'),'secondary')}</article></div>`;
+  return `<div class="hero"><div><span class="eyebrow">${t('YOUR FINANCIAL WORKSPACE','आपका आर्थिक कार्यक्षेत्र')}</span><h1>${t('Your money, in focus.','आपके पैसों की साफ़ तस्वीर।')}</h1><p>${t('Track what comes in, see what goes out, and check suspicious payments before you act.','आमदनी और खर्च देखें, और किसी संदिग्ध भुगतान पर कदम उठाने से पहले उसकी जाँच करें।')}</p><div class="hero-actions">${btn('open-message',t('Check a message','संदेश जाँचें'),'primary')}${nav('manager',t('Open ledger','बहीखाता खोलें'),'outline')}${nav('assistant',t('Ask ArthSaathi','ArthSaathi से पूछें'),'outline')}</div></div><div class="hero-art" aria-hidden="true"><div class="orbit"></div><div class="orbit two"></div><div class="orbit three"></div><div class="hero-mark"><img src="./mark.svg" alt=""></div><i></i><b></b></div></div>
+    <a class="secondary project-evidence" href="./mentor.html">${t('Why ArthSaathi?','ArthSaathi क्यों?')}</a>
+    <a class="secondary project-evidence" href="./build-evidence.html">${t('Covexcode CLI used for QA · View evidence','Covexcode CLI से QA · प्रमाण देखें')}</a><div class="overview-title"><h2>${t('Financial snapshot','आर्थिक झलक')}</h2>${modeSwitch()}</div>${stats()}<div class="dashboard-grid">${chart()}<article class="card spotlight"><span class="stat-icon mint" aria-hidden="true">⌘</span><h2>${t('Intelligence Hub','इंटेलिजेंस हब')}</h2><p>${t('Compare a QR against an open sale, then record credit after checking your own bank app.','क्यूआर की लंबित बिक्री से तुलना करें और बैंक ऐप में जमा देखने के बाद पुष्टि दर्ज करें।')}</p><div class="spot-count"><strong>${state.sales.filter(s=>s.status==='pending').length}</strong> ${t('sales awaiting payment','बिक्री के भुगतान बाकी')}</div>${nav('hub',t('Open Intelligence Hub','इंटेलिजेंस हब खोलें'),'secondary')}</article></div>`;
 }
 function riskReasons(scan) {
   return scan.signals.flatMap(key=>Object.hasOwn(signals,key)?[topicText(signals[key])]:[]);
@@ -161,20 +166,47 @@ function manager() {
     <article class="card pane spaced"><h2>${t('Ledger entries','बहीखाता रिकॉर्ड')}</h2><p>${t('All recorded dates','सभी दर्ज तारीखें')}</p>
     ${[...totals(state,mode).entries].sort((a,b)=>b.date.localeCompare(a.date)).map(e=>`<div class="line"><div><b>${esc(e.name)}</b> ${marker(e)}<small>${dateText(e.date)} · ${e.type==='income'?t('Income','आमदनी'):t('Expense','खर्च')}</small></div><strong class="${e.type}">${e.type==='income'?'+':'−'}${money(e.amount)}</strong></div>`).join('') || `<div class="empty">${t('No entries yet.','अभी कोई रिकॉर्ड नहीं।')}</div>`}</article>`;
 }
+function qrReviewLabel(review) {
+  return {
+    high:t('High risk','अधिक जोखिम'),
+    medium:t('Review before acting','कदम उठाने से पहले जाँचें'),
+    low:t('Few or no signals','कम या कोई संकेत नहीं'),
+    unassessed:t('Inconclusive','नतीजा स्पष्ट नहीं')
+  }[review.level];
+}
+function saleQrReview(review) {
+  if(!review) return '';
+  const reasons=review.signals.flatMap(key=>{
+    const label=qrSignals[key] || signals[key];
+    return label ? [`<li>${topicText(label)}</li>`] : [];
+  });
+  return `<section class="qr-reading" aria-label="${t('Saved QR review','सहेजी क्यूआर समीक्षा')}">
+    <div class="qr-reading-head"><h3>${t('Saved QR review','सहेजी क्यूआर समीक्षा')}</h3><span class="qr-badge ${review.level==='unassessed'?'medium':review.level}">${qrReviewLabel(review)}</span></div>
+    <p>${dateText(review.date)} · ${review.codeCount} ${t('decoded QR code(s)','पढ़े गए क्यूआर कोड')}</p>
+    ${reasons.length?`<ul class="signal-list">${reasons.join('')}</ul>`:''}
+    ${review.inconclusive?`<p>${t('At least one decoded code could not be assessed.','कम से कम एक पढ़े गए कोड की जाँच पूरी नहीं हुई।')}</p>`:''}
+  </section>`;
+}
 function hub() {
   const pending = state.sales.filter(s=>s.status==='pending');
-  const sale = pending.find(s=>s.id===selectedSale);
-  return `${section(t('Financial Intelligence Hub','वित्तीय इंटेलिजेंस हब'),t('From a suspicious payment claim to a recorded, user-confirmed receipt.','संदिग्ध भुगतान के दावे से अपनी पुष्टि के साथ रसीद दर्ज करने तक।'))}
-    <div class="step-strip"><span>1 · ${t('Check the message','संदेश जाँचें')}</span><span>2 · ${t('Link an open sale','बिक्री से जोड़ें')}</span><span>3 · ${t('Confirm the credit','जमा की पुष्टि करें')}</span></div>
-    <div class="two-grid"><article class="card pane"><h2>${t('Review & link','समीक्षा और लिंक')}</h2>
-    ${result ? `<p>${t('Current MoneyShield assessment','मौजूदा MoneyShield आकलन')} · <b>${result.score}/100</b></p>
-    ${pending.length ? `<form id="link">${label(t('Pending sale','लंबित बिक्री'),`<select name="sale" required><option value="">${t('Choose a sale','बिक्री चुनें')}</option>${pending.map(s=>`<option value="${esc(s.id)}" ${s.id===selectedSale?'selected':''}>${esc(s.name)} · ${money(s.amount)}</option>`).join('')}</select>`)}${submit(t('Link risk summary','जोखिम सारांश जोड़ें'))}</form>` : `<p>${t('Add a pending sale from MoneyManager.','MoneyManager से लंबित बिक्री जोड़ें।')}</p>`}` : `<p>${t('Run a MoneyShield check to link its risk summary to a sale.','जोखिम सारांश बिक्री से जोड़ने के लिए MoneyShield जाँच चलाएँ।')}</p>${nav('shield',t('Check a message','संदेश जाँचें'),'secondary')}`}
-    <div class="spaced"><h3>${t('Customer dues','ग्राहक का बकाया')}</h3>${state.sales.map(s=>`<div class="line"><div><b>${esc(s.name)}</b> ${marker(s)}<small>${s.status==='pending'?t('Pending','लंबित'):t('User-confirmed','उपयोगकर्ता ने पुष्टि की')}${s.risk ? ' · ' + t('Linked risk','जुड़ा जोखिम') + ' ' + s.risk.score + '/100' : ''}</small></div><div class="due-end"><strong>${money(s.amount)}</strong>${s.status==='pending'?btn('select:'+esc(s.id),t('Review','समीक्षा'),'text-btn'):''}</div></div>`).join('') || `<p>${t('No customer dues.','ग्राहक का कोई बकाया नहीं।')}</p>`}</div></article>
-    <article class="card pane"><h2>${t('Confirm credit manually','खुद जमा राशि की पुष्टि करें')}</h2>
+  const sale = state.sales.find(s=>s.id===selectedSale);
+  const isPending = sale?.status==='pending';
+  return `${section(t('Financial Intelligence Hub','वित्तीय इंटेलिजेंस हब'),t('Review a QR or payment message against a sale before recording incoming credit.','जमा राशि दर्ज करने से पहले क्यूआर या भुगतान संदेश की बिक्री से तुलना करें।'))}
+    <div class="step-strip"><span>1 · ${t('Choose a sale','बिक्री चुनें')}</span><span>2 · ${t('Review the QR or message','क्यूआर या संदेश जाँचें')}</span><span>3 · ${t('Confirm incoming credit','जमा की पुष्टि करें')}</span></div>
+    <div class="two-grid"><article class="card pane"><h2>${t('Customer dues','ग्राहक का बकाया')}</h2>
+    ${state.sales.map(s=>`<div class="line"><div><b>${esc(s.name)}</b> ${marker(s)}<small>${s.status==='pending'?t('Pending','लंबित'):t('User-confirmed','उपयोगकर्ता ने पुष्टि की')}${s.risk ? ' · ' + t('Linked message risk','जुड़ा संदेश जोखिम') + ' ' + s.risk.score + '/100' : ''}${s.qrReview ? ' · QR ' + qrReviewLabel(s.qrReview) : ''}</small></div><div class="due-end"><strong>${money(s.amount)}</strong>${btn('select:'+esc(s.id),t('Review','समीक्षा'),'text-btn')}</div></div>`).join('') || `<p>${t('No customer dues. Add a pending sale in MoneyManager.','ग्राहक का कोई बकाया नहीं। MoneyManager में लंबित बिक्री जोड़ें।')}</p>`}
+    <div class="spaced"><h3>${t('Message check','संदेश जाँच')}</h3>
+    ${result && pending.length ? `<p>${t('Current MoneyShield assessment','मौजूदा MoneyShield आकलन')} · <b>${result.score}/100</b></p>
+    <form id="link">${label(t('Pending sale','लंबित बिक्री'),`<select name="sale" required><option value="">${t('Choose a sale','बिक्री चुनें')}</option>${pending.map(s=>`<option value="${esc(s.id)}" ${s.id===selectedSale?'selected':''}>${esc(s.name)} · ${money(s.amount)}</option>`).join('')}</select>`)}${submit(t('Link risk summary','जोखिम सारांश जोड़ें'))}</form>` : btn('open-message',t('Check a message','संदेश जाँचें'),'secondary spaced')}</div></article>
+    <article class="card pane"><h2 tabindex="-1" id="sale-review-title">${t('Sale review','बिक्री समीक्षा')}</h2>
     ${sale ? `<p><b>${esc(sale.name)}</b> · ${money(sale.amount)} ${marker(sale)}</p>
-    ${sale.risk ? showRisk(sale.risk) : `<div class="notice">${t('Open your official bank or UPI app and match the amount and incoming credit to this sale.','अपना आधिकारिक बैंक या यूपीआई ऐप खोलें और जमा राशि को बिक्री से मिलाएँ।')}</div>`}
-    <form id="confirm"><label class="check"><input type="checkbox" name="checked" required><span>${sale.demo ? t('For this fictional demo, simulate that I personally checked the incoming credit.','इस काल्पनिक डेमो में मानें कि मैंने स्वयं जमा राशि देखी।') : t('I personally checked the incoming credit in my bank or UPI app.','मैंने बैंक या यूपीआई ऐप में खुद जमा राशि देखी है।')}</span></label>${submit(sale.demo?t('Record demo confirmation','डेमो पुष्टि दर्ज करें'):t('Record my confirmation','मेरी पुष्टि दर्ज करें'))}</form>` : `<div class="empty">${t('Choose an open sale to view the confirmation checklist.','पुष्टि के चरण देखने के लिए लंबित बिक्री चुनें।')}</div>`}
-    <p>${t('ArthSaathi records your confirmation in the ledger. It has no access to banking or payment networks.','ArthSaathi आपकी पुष्टि बहीखाते में दर्ज करता है। इसकी बैंक या भुगतान नेटवर्क तक पहुँच नहीं है।')}</p>
+    ${isPending ? `<div class="actions">${btn('sale-qr',t(sale.qrReview?'Scan another QR for this sale':'Check a QR for this sale',sale.qrReview?'इस बिक्री का दूसरा क्यूआर जाँचें':'इस बिक्री के लिए क्यूआर जाँचें'),'secondary')}</div>` : ''}
+    ${saleQrReview(sale.qrReview)}
+    ${sale.risk ? showRisk(sale.risk) : ''}
+    ${isPending ? `<section class="spaced"><h3>${t('Confirm credit manually','खुद जमा राशि की पुष्टि करें')}</h3><p>${t('Open your own bank or UPI app and check for an incoming credit matching the sale. Leave the sale pending if the credit is missing.','अपने बैंक या यूपीआई ऐप में बिक्री से मेल खाती जमा राशि देखें। रकम जमा न हुई हो तो बिक्री लंबित रखें।')}</p>
+    <form id="confirm"><label class="check"><input type="checkbox" name="checked" required><span>${sale.demo ? t('For this fictional demo, simulate that I personally checked the incoming credit.','इस काल्पनिक डेमो में मानें कि मैंने स्वयं जमा राशि देखी।') : t('I personally checked the incoming credit in my bank or UPI app.','मैंने बैंक या यूपीआई ऐप में खुद जमा राशि देखी है।')}</span></label>${submit(sale.demo?t('Record demo confirmation','डेमो पुष्टि दर्ज करें'):t('Record my confirmation','मेरी पुष्टि दर्ज करें'))}</form></section>` : `<div class="notice">${t('User-confirmed credit recorded in the business ledger.','उपयोगकर्ता द्वारा पुष्टि की गई जमा राशि व्यवसाय के बहीखाते में दर्ज है।')}</div><div class="actions">${btn('open-business-ledger',t('View business ledger','व्यवसाय का बहीखाता देखें'),'secondary')}</div>`}`
+    : `<div class="empty">${t('Choose a sale to review its QR and any linked message.','क्यूआर और जुड़े संदेश की जाँच के लिए बिक्री चुनें।')}</div>`}
+    <p>${t('ArthSaathi does not contact your bank or initiate a payment.','ArthSaathi बैंक से संपर्क नहीं करता और भुगतान शुरू नहीं करता।')}</p>
     ${nav('guide',t('Read UPI safety guide','यूपीआई सुरक्षा गाइड पढ़ें'),'secondary')}</article></div>`;
 }
 function guide() {
@@ -193,8 +225,9 @@ function report() {
     <div class="actions"><a class="primary link" href="tel:1930">${t('Call 1930','1930 पर कॉल करें')}</a><a class="secondary link" href="${topic.url}" target="_blank" rel="noopener noreferrer">${t('Open official reporting portal','आधिकारिक शिकायत पोर्टल खोलें')}</a></div></article>`;
 }
 function privacy() {
+  if(isolatedDemo) return `${section(t('Privacy & data','गोपनीयता और डेटा'),t('This fictional demo resets on refresh. Your usual workspace is separate.','यह काल्पनिक डेमो रिफ्रेश पर फिर से शुरू होता है। आपका सामान्य कार्यक्षेत्र अलग है।'))}<a class="secondary" href="./">${t('Open my workspace','मेरा कार्यक्षेत्र खोलें')}</a>`;
   return `${section(t('Privacy & data','गोपनीयता और डेटा'),t('Choose what stays on this device.','चुनें कि इस डिवाइस पर क्या सहेजा जाए।'))}
-    <div class="two-grid"><article class="card pane"><h2>${t('On this browser','इस ब्राउज़र पर')}</h2><p>${t('The ledger, dues, budgets and linked risk summaries are saved in this browser. Raw scan text is only held in memory until you clear it or close the page. An exported copy contains your saved records.','बहीखाता, बकाया, बजट और जुड़े जोखिम सारांश इसी ब्राउज़र में रहते हैं। जाँच का मूल संदेश साफ़ करने या पेज बंद करने तक अस्थायी मेमोरी में रहता है। निर्यात में आपके सहेजे रिकॉर्ड होते हैं।')}</p>
+    <div class="two-grid"><article class="card pane"><h2>${t('On this browser','इस ब्राउज़र पर')}</h2><p>${t('The ledger, dues, budgets and linked risk summaries are saved in this browser. Raw scan text stays in memory until cleared or the page closes. QR images and decoded details clear when you leave the QR screen. An exported copy contains your saved records.','बहीखाता, बकाया, बजट और जुड़े जोखिम सारांश इसी ब्राउज़र में रहते हैं। जाँच का मूल संदेश साफ़ करने या पेज बंद करने तक मेमोरी में रहता है। क्यूआर स्क्रीन छोड़ते ही चित्र और पढ़ी गई जानकारी हट जाती है। निर्यात में सहेजे रिकॉर्ड होते हैं।')}</p>
     <label class="check"><input id="history" type="checkbox" ${state.keepScans?'checked':''}><span>${t('Keep scan summaries on this device','जाँच सारांश इस डिवाइस पर रखें')}</span></label>
     <div class="actions">${btn('export',t('Export my data','मेरा डेटा निर्यात करें'),'secondary')}${btn('clear-scan',t('Clear current scan','मौजूदा जाँच साफ़ करें'),'secondary')}</div></article>
     <article class="card pane"><h2>${t('Delete workspace','कार्यक्षेत्र मिटाएँ')}</h2><p>${t('This removes all ArthSaathi records from this browser and returns to onboarding.','इससे इस ब्राउज़र से ArthSaathi के सभी रिकॉर्ड मिट जाएँगे और शुरुआती स्क्रीन खुलेगी।')}</p>${btn('delete',t('Delete local data','स्थानीय डेटा मिटाएँ'),'danger')}</article></div>`;
@@ -235,14 +268,20 @@ app.addEventListener('click', e => {
     document.querySelector(`[data-action="${action}"]`)?.focus();
   }
   if (action==='sample' || action==='sample-receipt') { draft=action==='sample' ? sample : receiptSample; result=null; render(); document.querySelector('[name="message"]').focus(); }
-  if (action?.startsWith('select:')) { selectedSale=action.slice(7); render(); document.querySelector('#confirm input')?.focus(); }
+  if (action?.startsWith('select:')) { selectedSale=action.slice(7); render(); document.querySelector('#sale-review-title')?.focus(); }
+  if(action==='open-message') { clearQrPanel(); shieldMode='message'; navigate('shield'); }
+  if(action==='open-business-ledger') { mode='business'; persist({...state,mode}); navigate('manager'); }
+  if(action==='sale-qr') {
+    const sale=state.sales.find(s=>s.id===selectedSale && s.status==='pending');
+    if(sale) { prepareSaleQr(sale); shieldMode='qr'; navigate('shield'); }
+  }
   if (action==='clear-scan') { draft=''; result=null; toast(t('Current scan cleared.','मौजूदा जाँच साफ़ है।')); }
   if (action==='export') {
     const url=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));
     const download=document.createElement('a'); download.href=url; download.download='arthsaathi-data.json'; download.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
   if (action==='delete' && window.confirm(t('Permanently delete this browser’s ArthSaathi data?','इस ब्राउज़र से ArthSaathi का डेटा हमेशा के लिए मिटाएँ?'))) {
-    try { localStorage.removeItem(key); } catch { toast(t('Browser blocked data deletion.','ब्राउज़र ने डेटा मिटाने से रोका।')); return; }
+    try { if(!isolatedDemo) localStorage.removeItem(key); } catch { toast(t('Browser blocked data deletion.','ब्राउज़र ने डेटा मिटाने से रोका।')); return; }
     clearAssistant(); state=null; draft=''; result=null; selectedSale=''; answer=''; navigate('overview');
   }
 });
@@ -279,7 +318,6 @@ app.addEventListener('submit', async e => {
     }
     if (type==='confirm') {
       persist(confirmSale(state,selectedSale,data.has('checked')));
-      selectedSale='';
       toast(t('Confirmation recorded and income added.','पुष्टि दर्ज हुई और आमदनी जुड़ी।'));
     }
     if(type==='ask' && api && !busy && data.has('consent')) {
@@ -296,7 +334,7 @@ app.addEventListener('submit', async e => {
       return;
     }
     render();
-    if (type==='link') document.querySelector('#confirm input')?.focus();
+    if (type==='link' || type==='confirm') document.querySelector('#sale-review-title')?.focus();
     else if (type==='scan') document.querySelector('.risk')?.scrollIntoView({block:'nearest'});
   } catch {
     if (type==='scan') { toast(t('Enter a message or link of up to 4,000 characters.','चार हज़ार अक्षरों तक का संदेश या लिंक डालें।')); return; }
@@ -304,7 +342,7 @@ app.addEventListener('submit', async e => {
   }
 });
 window.addEventListener('storage', event=>{
-  if (event.key!==key && event.key!==null) return;
+  if (isolatedDemo || (event.key!==key && event.key!==null)) return;
   try {
     state=JSON.parse(localStorage.getItem(key));
     if(state) { mode=state.mode||'business'; hi=state.language==='hi'; }
@@ -312,7 +350,18 @@ window.addEventListener('storage', event=>{
     render();
   } catch { storageError=true; render(); }
 });
-wireQrPanel(app, ()=>route==='shield'&&shieldMode==='qr'&&Boolean(state), ()=>hi);
+wireQrPanel(app, ()=>route==='shield'&&shieldMode==='qr'&&Boolean(state), ()=>hi, (scope,reports,demo)=>{
+  try {
+    const sale=state.sales.find(s=>s.id===scope.id && s.amount===scope.amount && s.status==='pending');
+    if(!sale || scope.id!==selectedSale) throw Error('sale');
+    persist(attachSaleQrReview(state,sale.id,reports,{demo}));
+    navigate('hub');
+    document.querySelector('#sale-review-title')?.focus();
+    toast(t('QR review saved. The sale is still pending.','क्यूआर समीक्षा सहेजी गई। बिक्री अभी लंबित है।'));
+  } catch {
+    toast(t('This sale is no longer available for QR review.','इस बिक्री की क्यूआर समीक्षा अब उपलब्ध नहीं है।'));
+  }
+});
 wireAssistant(app, render, ()=>route==='assistant' && Boolean(state));
 render();
 fetch('./api/status').then(r=>r.ok?r.json():null).then(value=>{api=value?.llm===true;if(['guide','assistant'].includes(route)) render();}).catch(()=>{});

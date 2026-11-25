@@ -12,6 +12,7 @@ let payee='';
 let amount='';
 let outcome=null;
 let control=null;
+let saleScope=null;
 
 const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const say=(hi,en,hindi)=>hi?hindi:en;
@@ -24,7 +25,17 @@ export function clearQrPanel() {
   payee='';
   amount='';
   outcome=null;
+  saleScope=null;
 }
+
+export function prepareSaleQr(sale) {
+  clearQrPanel();
+  const {id,name,amount:paise,demo} = sale;
+  saleScope={id,name,amount:paise,demo:demo===true};
+  amount=(paise/100).toFixed(2);
+}
+
+const isDemoSale=()=>saleScope?.id==='demo-sale' && saleScope.demo;
 
 function showOutcome(hi) {
   const t=(en,hindi)=>say(hi,en,hindi);
@@ -70,22 +81,24 @@ function showOutcome(hi) {
       ${comparison?.amountNotEncoded?`<p>${t('This code leaves the amount open. Check it in your official payment app.','कोड में रकम तय नहीं है। आधिकारिक भुगतान ऐप में जाँचें।')}</p>`:''}
       ${item.type==='payment'?`<div class="notice">${t('Confirm the recipient and amount independently in your official payment app. Receiving money does not require approving a payment.','प्राप्तकर्ता और रकम अपने आधिकारिक भुगतान ऐप में खुद जाँचें। पैसे पाने के लिए भुगतान मंज़ूर करने की ज़रूरत नहीं होती।')}</div>`:item.type==='link'?`<div class="notice">${t('Use the organization’s website or app that you already know. This scan did not open the address.','संस्था की परिचित वेबसाइट या ऐप इस्तेमाल करें। इस जाँच ने पता नहीं खोला।')}</div>`:''}
       </div>`;
-  }).join('')}`;
+  }).join('')}${saleScope ? `<div class="actions"><button type="button" class="primary" data-qr-save>${t('Save QR review to sale','क्यूआर समीक्षा बिक्री में सहेजें')}</button></div>` : ''}`;
 }
 
 export function qrPanel(hi) {
   const t=(en,hindi)=>say(hi,en,hindi);
   return `<div class="two-grid"><article class="card pane"><h2>${t('Upload a QR image','क्यूआर चित्र चुनें')}</h2>
+    ${saleScope ? `<div class="notice qr-sale-context"><strong>${escape(saleScope.name)} · ${asMoney(saleScope.amount,hi)}</strong><div>${t('Pending sale · The expected amount comes from your ledger. Enter the intended recipient’s UPI ID if you know it independently.','लंबित बिक्री · अपेक्षित रकम बहीखाते से ली गई है। प्राप्तकर्ता की यूपीआई आईडी स्वतंत्र रूप से पता हो तो डालें।')}</div></div>` : ''}
     <p>${t('Screenshots and photos stay in this browser. Scanning never opens a link or starts a payment.','स्क्रीनशॉट और फ़ोटो इसी ब्राउज़र में रहते हैं। स्कैन से लिंक नहीं खुलता और भुगतान शुरू नहीं होता।')}</p>
     <form id="qr-scan">
       <label class="qr-file"><span>${t('QR image','क्यूआर चित्र')}</span><input id="qr-file" type="file" accept="image/png,image/jpeg,image/webp"><small id="qr-file-name">${file?.name?escape(file.name):'PNG, JPEG, WebP · 10 MB'}</small></label>
-      <fieldset class="qr-expect"><legend>${t('Compare a payment · optional','भुगतान की तुलना करें · वैकल्पिक')}</legend>
+      <fieldset class="qr-expect"><legend>${saleScope?t('Compare to the sale','बिक्री से तुलना करें'):t('Compare a payment · optional','भुगतान की तुलना करें · वैकल्पिक')}</legend>
       <p>${t('Enter the UPI ID or amount you already know for this payment.','इस भुगतान का वह यूपीआई आईडी या रकम डालें जो आपको पहले से पता हो।')}</p>
       <label><span>${t('Expected UPI ID','अपेक्षित यूपीआई आईडी')}</span><input id="qr-payee" type="text" maxlength="321" value="${escape(payee)}" placeholder="merchant@provider" autocomplete="off" spellcheck="false"></label>
-      <label><span>${t('Expected amount (₹)','अपेक्षित रकम (₹)')}</span><input id="qr-amount" type="text" maxlength="13" inputmode="decimal" value="${escape(amount)}" placeholder="2450.00" autocomplete="off"></label></fieldset>
+      <label><span>${t('Expected amount (₹)','अपेक्षित रकम (₹)')}</span><input id="qr-amount" type="text" maxlength="13" inputmode="decimal" value="${escape(amount)}" placeholder="2450.00" autocomplete="off" ${saleScope?'readonly':''}></label></fieldset>
       <button class="primary" type="submit" ${outcome?.state==='working'?'disabled':''}>${t('Scan QR','क्यूआर स्कैन करें')}</button>
     </form>
-    <div class="qr-demos"><button type="button" class="secondary" data-qr-demo="payment">${t('Try payee mismatch','यूपीआई आईडी का अंतर आज़माएँ')}</button><button type="button" class="secondary" data-qr-demo="link">${t('Try suspicious link','संदिग्ध लिंक आज़माएँ')}</button></div>
+    ${(!saleScope || isDemoSale()) ? `<div class="qr-demos"><button type="button" class="secondary" data-qr-demo="payment">${saleScope ? t('Scan sample for this sale','इस बिक्री के लिए डेमो स्कैन करें') : t('Try payee mismatch','यूपीआई आईडी का अंतर आज़माएँ')}</button>${saleScope ? '' : `<button type="button" class="secondary" data-qr-demo="link">${t('Try suspicious link','संदिग्ध लिंक आज़माएँ')}</button>`}</div>` : ''}
+    ${saleScope ? `<div class="actions"><button type="button" class="secondary" data-route="hub">${t('Back to sale review','बिक्री समीक्षा पर वापस जाएँ')}</button></div>` : ''}
   </article><article class="card pane"><h2>${t('QR assessment','क्यूआर आकलन')}</h2><div id="qr-outcome" aria-live="polite">${showOutcome(hi)}</div></article></div>`;
 }
 
@@ -126,7 +139,7 @@ async function decodeImage(blob, signal) {
   });
 }
 
-export function wireQrPanel(app, isActive, getHindi) {
+export function wireQrPanel(app, isActive, getHindi, saveForSale) {
   const paint=()=>{
     const target=document.querySelector('#qr-outcome');
     if(!isActive()||!target) return;
@@ -148,7 +161,7 @@ export function wireQrPanel(app, isActive, getHindi) {
   });
   app.addEventListener('input',event=>{
     if(event.target.id==='qr-payee') payee=event.target.value;
-    else if(event.target.id==='qr-amount') amount=event.target.value;
+    else if(event.target.id==='qr-amount' && !saleScope) amount=event.target.value;
     else return;
     resetOutcome();
   });
@@ -159,7 +172,7 @@ export function wireQrPanel(app, isActive, getHindi) {
     outcome={state:'working'};
     paint();
     try {
-      const expected=demo==='payment'?paymentExpectations('meera@demo','2450.00'):
+      const expected=demo==='payment'?paymentExpectations('meera@demo',saleScope?amount:'2450.00'):
         demo?paymentExpectations():paymentExpectations(payee,amount);
       let source=file;
       if(demo) {
@@ -183,7 +196,11 @@ export function wireQrPanel(app, isActive, getHindi) {
     void run();
   });
   app.addEventListener('click',event=>{
+    if(event.target.closest('[data-qr-save]') && saleScope && outcome?.state==='done') {
+      saveForSale(saleScope,outcome.reports,Boolean(outcome.demo));
+      return;
+    }
     const demo=event.target.closest('[data-qr-demo]')?.dataset.qrDemo;
-    if(demo&&Object.hasOwn(demoFiles,demo)) void run(demo);
+    if(demo && Object.hasOwn(demoFiles,demo) && (!saleScope || (demo==='payment' && isDemoSale()))) void run(demo);
   });
 }

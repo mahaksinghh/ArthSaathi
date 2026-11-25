@@ -29,3 +29,8 @@ For the next run, use a fresh browser profile or use **Privacy & data → Delete
 Open **MoneyShield → QR check → Try payee mismatch**. The fictional expected ID is `meera@demo`, but the QR encodes `collection@demo`. The assessment shows the mismatch. **Try suspicious link** shows the actual host, `redirect.test`.
 
 For the file-upload demo, use the PNGs in `public/demos/`. Enter `meera@demo` and `2450.00` as the expected details for the UPI examples.
+
+
+## Mentor walkthrough
+
+Open [Why ArthSaathi?](https://arthsaathi-rosy.vercel.app/mentor.html) and choose **Run the ₹2,450 demo**. Select **Check a QR for this sale → Scan sample for this sale → Save QR review to sale**. The right amount hides a different UPI ID. Show that the sale is still pending after saving the review. Simulate seeing a separate incoming credit in the official app, record the confirmation, and open the business ledger to show the single entry.

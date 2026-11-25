@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="description" content="Try an ArthSaathi sale review and see which checks and APIs run in the live demo.">
+<title>ArthSaathi | Mentor demo and technical evidence</title>
+<link rel="icon" href="./mark.svg">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<main class="evidence-page mentor-page">
+  <a class="secondary" href="./">Back to ArthSaathi</a>
+
+  <header class="mentor-hero">
+    <img src="./mark.svg" width="52" height="52" alt="">
+    <p class="eyebrow">THE SOLVERS · HACKNOVA TRACK 1</p>
+    <h1>Review the QR before closing the sale</h1>
+    <p>ArthSaathi ties an explainable QR or scam-message check to a pending sale. The merchant can record what raised concern and close the sale only after checking that the money arrived.</p>
+    <div class="actions">
+      <a class="primary" href="./?demo=sale-qr">Run the ₹2,450 demo</a>
+      <a class="secondary" href="#technical">See the API inventory</a>
+    </div>
+  </header>
+
+  <section class="card pane mentor-section" aria-labelledby="demo-heading">
+    <h2 id="demo-heading">Try a ₹2,450 sale</h2>
+    <p>Meera Stores and both UPI IDs are fictional. The demo opens separately from your workspace.</p>
+    <ol class="mentor-steps">
+      <li>Open <strong>Check a QR for this sale</strong>. The pending sale supplies the expected amount.</li>
+      <li>Choose <strong>Scan sample for this sale</strong>. The amount matches ₹2,450, but the QR encodes <code>collection@demo</code> instead of the expected <code>meera@demo</code>.</li>
+      <li>Choose <strong>Save QR review to sale</strong>. The mismatch stays with the sale, which remains pending.</li>
+      <li>Simulate checking the incoming credit in the bank app, then choose <strong>Record demo confirmation</strong>. The ledger records one receipt.</li>
+    </ol>
+    <p><strong>Why check the bank independently?</strong> A QR describes a destination or payment instruction. It cannot show whether money reached the merchant.</p>
+  </section>
+
+  <section class="card pane mentor-section" aria-labelledby="comparison-heading">
+    <h2 id="comparison-heading">How ArthSaathi compares</h2>
+    <div class="mentor-grid">
+      <article>
+        <h3>Google Search, Lens and Safe Browsing</h3>
+        <p>Search surfaces relevant information. Lens scans QR codes and can assess suspicious messages using AI and web sources. Safe Browsing checks URLs against Google's threat lists. <a href="https://support.google.com/websearch/answer/134479?hl=en">Search help</a> · <a href="https://support.google.com/pixelcamera/answer/16561572?hl=en">QR scanning</a> · <a href="https://blog.google/products-and-platforms/products/search/scam-detection-circle-to-search-lens/">Lens scam detection</a> · <a href="https://developers.google.com/safe-browsing/reference">Safe Browsing</a></p>
+      </article>
+      <article>
+        <h3>Google Pay and PhonePe</h3>
+        <p>These products support UPI payments and merchant services. Google Pay for Business offers fraud safeguards. PhonePe for Business tracks transactions and provides payment confirmations. <a href="https://support.google.com/pay/business/answer/9054423?hl=en">Google Pay for Business</a> · <a href="https://www.phonepe.com/business-solutions/offline-merchant/">PhonePe merchant tools</a></p>
+      </article>
+      <article>
+        <h3>NPCI MyUPI</h3>
+        <p>MyUPI accepts a QR or UPI ID for payee details and provides UPI activity, complaint support and guidance. <a href="https://www.npci.org.in/product/myupi.html">NPCI product overview</a></p>
+      </article>
+      <article>
+        <h3>ArthSaathi's focus</h3>
+        <p>Start with the merchant's own pending sale. Compare its expected details with the QR, keep the reasons beside the sale, and record the credit check in the ledger. The original QR image stays in the browser.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="technical" class="card pane mentor-section" aria-labelledby="technical-heading">
+    <h2 id="technical-heading">What runs in the live app</h2>
+    <div class="mentor-grid">
+      <article>
+        <h3>QR and message analysis</h3>
+        <p>Canvas reads the image pixels and a Web Worker runs the bundled jsQR library. Plain JavaScript checks payment fields, compares the encoded UPI ID and amount with expected values, and explains message and link risk signals. These checks use no external scoring API.</p>
+      </article>
+      <article>
+        <h3>Workspace and voice</h3>
+        <p>Browser <code>localStorage</code> stores the regular workspace and saved review summaries. Web Speech handles dictation and read-aloud where supported. The browser's speech service may process audio.</p>
+      </article>
+      <article>
+        <h3>Deployment and assistant</h3>
+        <p>Vercel serves the static demo. Built-in answers run in the browser. An optional Node server exposes <code>/api/status</code>, <code>/api/guide</code> and <code>/api/assistant</code>. With a configured model, server credentials and user consent, both POST endpoints can call the OpenAI Responses API. Only the assistant endpoint enables the web search tool. That integration is disabled on the static demo.</p>
+      </article>
+      <article>
+        <h3>Payment boundary</h3>
+        <p>The demo uses no bank, UPI network, Google Safe Browsing, or payment gateway API. ArthSaathi cannot confirm account ownership, verify settlement, or move money. The user records their own independent credit check.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="card pane mentor-section" aria-labelledby="benchmark-heading">
+    <h2 id="benchmark-heading">What we tested</h2>
+    <dl class="mentor-grid">
+      <div><dt>Fictional scam scenarios flagged</dt><dd><strong>37 of 39</strong>, up from 14 of 39</dd></div>
+      <div><dt>Ordinary test scenarios flagged</dt><dd><strong>2 of 35</strong>, down from 12 of 35</dd></div>
+      <div><dt>Difficult photos with at least one decoded QR</dt><dd><strong>34 of 60</strong>, up from 24 with full-frame decoding alone</dd></div>
+      <div><dt>Clean PNGs decoded</dt><dd><strong>10,000 of 10,000</strong></dd></div>
+    </dl>
+    <p>These are development benchmarks. The message labels come from authored scenarios. The QR datasets have no verified fraud labels, so their counts measure decoding coverage. <a href="https://github.com/mahaksinghh/ArthSaathi/blob/main/benchmarks/README.md">Message benchmark</a> · <a href="https://github.com/mahaksinghh/ArthSaathi/blob/main/benchmarks/QR.md">QR benchmark</a></p>
+  </section>
+
+  <section class="card pane mentor-section" aria-labelledby="qa-heading">
+    <h2 id="qa-heading">Covexcode QA evidence</h2>
+    <p>Covexcode CLI was used during development to review the fictional QR mismatch. The recorded transcript and the automated regression check are available on the evidence page.</p>
+    <div class="actions"><a class="secondary" href="./build-evidence.html">View the recorded CLI session</a></div>
+  </section>
+</main>
+</body>
+</html>

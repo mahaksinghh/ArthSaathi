@@ -16,12 +16,20 @@ Open http://127.0.0.1:4173 and choose **Explore demo** or **Start empty**. The d
 
 See [DEMO.md](DEMO.md) for the presentation script and repeatable checks. Use a separate browser profile for the demo if you already have real records on that origin.
 
+## Mentor demo
+
+Open [Why ArthSaathi?](https://arthsaathi-rosy.vercel.app/mentor.html) for the comparison, documented browser capabilities, API inventory and benchmark scope. [Start the guided sale review](https://arthsaathi-rosy.vercel.app/?demo=sale-qr) to open the fictional Meera Stores sale for ₹2,450. The guided demo runs separately from your regular browser workspace and resets on refresh.
+
+1. Select **Check a QR for this sale** and then **Scan sample for this sale**. The amount matches the sale, but the fixture encodes `collection@demo` instead of the expected `meera@demo`.
+2. Save the QR review. The sale remains pending. Only review indicators and metadata are saved with the sale.
+3. Simulate separately checking incoming credit and record the confirmation. The business ledger receives one user-confirmed entry.
+
 ## Product and architecture
 
 - **Overview and MoneyManager** show separate personal and business ledgers, monthly totals, daily charts, spending budgets and digital khata. Money is represented as integer paise. Pending dues are tracked apart from collected income.
 - **MoneyShield** checks pasted text, URL structure and QR images locally. It looks for credential requests, fake payment and refund tactics, KYC pressure, remote access and lookalike links. The result shows which indicators matched and what to check next. See the [dataset audit and before/after evaluation](benchmarks/README.md).
 - **MoneyGuide** contains bilingual lessons from RBI, SEBI Investor and the National Cyber Crime Reporting Portal. It works with the optional AI endpoint off.
-- **Intelligence Hub** stores a risk summary against a sale. One local state write changes the sale status and adds a linked receipt after explicit confirmation. The domain function rejects repeat confirmations.
+- **Intelligence Hub** compares a QR against an open sale’s expected amount and an independently known UPI ID when supplied. It can save both message and QR summaries on that sale. One local state write changes sale status and adds a receipt after separate user confirmation of incoming credit. Repeat confirmations are rejected.
 - **Onboarding, reporting and privacy** include a clean or fictional workspace, India’s 1930 helpline and official complaint portal, optional scan-summary history, export and whole-workspace deletion.
 
 ```text

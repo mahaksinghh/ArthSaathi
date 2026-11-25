@@ -12,6 +12,7 @@ async function withServer(options, run) {
 test('local app serves assets and reports that AI is off without credentials', async () => {
   await withServer({},async base=>{
     assert.match(await (await fetch(base)).text(),/ArthSaathi/);
+    assert.match(await (await fetch(base + '/mentor.html')).text(),/\?demo=sale-qr/);
     assert.match((await fetch(base + '/app.js')).headers.get('content-type'),/javascript/);
     assert.match(await (await fetch(base + '/moneyshield.js')).text(), /export function assess/);
     assert.match((await fetch(base + '/qr-worker.js')).headers.get('content-type'),/javascript/);

@@ -1,3 +1,6 @@
+import { signals } from './guide.js';
+import { qrSignals } from './qr-risk.js';
+
 export { assess } from './moneyshield.js';
 export const sample = 'URGENT: ₹2,450 payment received. To release the money, enter your UPI PIN now at http://pay-confirm.example/claim';
 export const today = (offset = 0) => {
@@ -40,6 +43,43 @@ export function confirmSale(state, saleId, checked, date = today()) {
   return { ...state, sales: state.sales.map(s => s.id === saleId ? {...s, status:'confirmed', confirmedAt:date} : s),
     entries: [{ id:'receipt-' + sale.id, saleId, name:sale.name, amount:sale.amount, date, mode:'business', type:'income', demo:sale.demo }, ...state.entries] };
 }
+
+const qrRiskLevels = ['unassessed', 'low', 'medium', 'high'];
+const assessedQrTypes = new Set(['payment', 'link', 'action']);
+const knownRiskSignals = new Set([...Object.keys(signals), ...Object.keys(qrSignals)]);
+
+export function attachSaleQrReview(state, saleId, reports, {demo = false, date = today()} = {}) {
+  const sale = state.sales.find(row => row.id === saleId);
+  // The QR worker returns up to four distinct decoded payloads per image.
+  if (!sale || sale.status !== 'pending' || !Array.isArray(reports) || reports.length < 1 || reports.length > 4 ||
+    typeof demo !== 'boolean' || (demo && (sale.id !== 'demo-sale' || sale.demo !== true)) ||
+    typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !new Date(date).toJSON()?.startsWith(date)) {
+    throw Error('qr-review');
+  }
+
+  const indicators = new Set();
+  let highestLevel = 0;
+  let inconclusive = false;
+  for (const report of reports) {
+    const risk = report?.risk;
+    const rank = qrRiskLevels.indexOf(risk?.level);
+    if (!assessedQrTypes.has(report?.type) || rank < 1 || !Array.isArray(risk?.signals)) {
+      inconclusive = true;
+      continue;
+    }
+    highestLevel = Math.max(highestLevel, rank);
+    for (const signal of risk.signals) {
+      if (knownRiskSignals.has(signal)) indicators.add(signal);
+    }
+  }
+
+  const qrReview = {
+    date, level: qrRiskLevels[highestLevel], signals: [...indicators],
+    codeCount: reports.length, inconclusive, demo,
+  };
+  return { ...state, sales: state.sales.map(row => row === sale ? { ...row, qrReview } : row) };
+}
+
 export function totals(state, mode, month) {
   const entries = state.entries.filter(e => e.mode === mode && (!month || e.date.startsWith(month)));
   const income = entries.reduce((sum, e) => sum + (e.type === 'income' ? e.amount : 0), 0);
