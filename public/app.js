@@ -1,6 +1,7 @@
 import { assess, blank, confirmSale, totals, today, sample, clean, paisa, id } from './core.js';
 import { topics, signals, safetyActions } from './guide.js';
 import { assistantPage, wireAssistant, clearAssistant } from './assistant.js';
+import { qrPanel, wireQrPanel, clearQrPanel } from './qr-panel.js';
 
 const key = 'arthsaathi.v1';
 const receiptSample = 'Payment received: ₹2,450. Demo reference TX-2450. Check your transaction history in your UPI app.';
@@ -12,6 +13,7 @@ state = state?.entries && state?.sales ? state : null;
 let hi = state?.language === 'hi';
 let mode = state?.mode === 'personal' ? 'personal' : 'business';
 let route = 'overview';
+let shieldMode = 'message';
 let period = 7;
 let draft = '';
 let result = null;
@@ -51,6 +53,7 @@ function toast(text) {
   toastTimer = setTimeout(() => { el.textContent = ''; }, 4500);
 }
 function navigate(target) {
+  if(route==='shield' && target!=='shield') clearQrPanel();
   route = target;
   render();
   window.scrollTo(0, 0);
@@ -128,7 +131,13 @@ function assessment() {
     `<div class="empty">${t('Run a check to see the score, matched signals and next step.','स्कोर, मिले संकेत और अगला कदम देखने के लिए जाँच चलाएँ।')}</div>`;
 }
 function shield() {
-  return `${section('MoneyShield', t('Check a message or URL for explainable scam signals.','संदेश या यूआरएल में धोखाधड़ी के संकेत और उनके कारण देखें।'))}
+  const control = `<div class="seg shield-modes" aria-label="${t('Scan type','स्कैन का प्रकार')}">
+    <button type="button" data-action="shield-message" aria-pressed="${shieldMode==='message'}">${t('Message or link','संदेश या लिंक')}</button>
+    <button type="button" data-action="shield-qr" aria-pressed="${shieldMode==='qr'}">${t('QR check','क्यूआर जाँच')}</button>
+  </div>`;
+  const intro = section('MoneyShield', t('Check messages, links, or QR codes for explainable scam indicators.','संदेश, लिंक या क्यूआर कोड में धोखाधड़ी के संकेत और कारण देखें।'));
+  if(shieldMode==='qr') return intro+control+qrPanel(hi);
+  return `${intro}${control}
     <div class="two-grid"><article class="card pane"><h2>${t('Message & link check','संदेश और लिंक जाँच')}</h2><p>${t('Analysis runs in this browser. Links are never opened.','जाँच इसी ब्राउज़र में होती है। लिंक नहीं खोले जाते।')}</p>
     <form id="scan">${label(t('Paste a message or URL','संदेश या यूआरएल चिपकाएँ'),`<textarea name="message" required maxlength="4000" rows="6" placeholder="${t('Paste the suspicious text here…','संदिग्ध संदेश यहाँ चिपकाएँ…')}">${esc(draft)}</textarea>`)}<div class="actions">${submit(t('Check for risk','जोखिम जाँचें'))}${btn('sample',t('Use demo scam','डेमो धोखा लें'),'secondary')}${btn('sample-receipt',t('Use demo receipt','डेमो रसीद लें'),'secondary')}</div></form></article>
     <article class="card pane"><h2>${t('Risk assessment','जोखिम आकलन')}</h2><div id="scan-result" aria-live="polite">${assessment()}</div></article></div>
@@ -216,6 +225,14 @@ app.addEventListener('click', e => {
   if (topic) { selectedTopic=topic; answer=''; render(); document.querySelector(`[data-topic="${topic}"]`)?.focus(); }
   if (action==='language') { hi=!hi; if(state) persist({...state,language:hi?'hi':'en'}); render(); document.querySelector('[data-action="language"]')?.focus(); }
   if (action==='demo'||action==='empty') { mode='business'; persist({...blank(action==='demo'),language:hi?'hi':'en',mode}); navigate('overview'); }
+  if (action==='shield-message' || action==='shield-qr') {
+    const next = action==='shield-qr'?'qr':'message';
+    if(next===shieldMode) return;
+    if(next==='message') clearQrPanel();
+    shieldMode=next;
+    render();
+    document.querySelector(`[data-action="${action}"]`)?.focus();
+  }
   if (action==='sample' || action==='sample-receipt') { draft=action==='sample' ? sample : receiptSample; result=null; render(); document.querySelector('[name="message"]').focus(); }
   if (action?.startsWith('select:')) { selectedSale=action.slice(7); render(); document.querySelector('#confirm input')?.focus(); }
   if (action==='clear-scan') { draft=''; result=null; toast(t('Current scan cleared.','मौजूदा जाँच साफ़ है।')); }
@@ -231,7 +248,7 @@ app.addEventListener('click', e => {
 app.addEventListener('submit', async e => {
   e.preventDefault();
   const form=e.target;
-  if(form.id==='assistant-form') return;
+  if(form.id==='assistant-form'||form.id==='qr-scan') return;
   const data=new FormData(form);
   const get=name=>clean(data.get(name));
   const type=form.id;
@@ -290,10 +307,11 @@ window.addEventListener('storage', event=>{
   try {
     state=JSON.parse(localStorage.getItem(key));
     if(state) { mode=state.mode||'business'; hi=state.language==='hi'; }
-    else { clearAssistant(); route='overview'; draft=''; result=null; selectedSale=''; }
+    else { clearAssistant(); clearQrPanel(); route='overview'; draft=''; result=null; selectedSale=''; }
     render();
   } catch { storageError=true; render(); }
 });
+wireQrPanel(app, ()=>route==='shield'&&shieldMode==='qr'&&Boolean(state), ()=>hi);
 wireAssistant(app, render, ()=>route==='assistant' && Boolean(state));
 render();
 fetch('./api/status').then(r=>r.ok?r.json():null).then(value=>{api=value?.llm===true;if(['guide','assistant'].includes(route)) render();}).catch(()=>{});

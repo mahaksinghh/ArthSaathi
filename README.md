@@ -19,7 +19,7 @@ See [DEMO.md](DEMO.md) for the presentation script and repeatable checks. Use a 
 ## Product and architecture
 
 - **Overview and MoneyManager** show separate personal and business ledgers, monthly totals, daily charts, spending budgets and digital khata. Money is represented as integer paise. Pending dues are tracked apart from collected income.
-- **MoneyShield** checks pasted text and URL structure locally. It looks for credential requests, fake payment and refund tactics, KYC pressure, remote access and lookalike links. The result shows which indicators matched and what to check next. See the [dataset audit and before/after evaluation](benchmarks/README.md).
+- **MoneyShield** checks pasted text, URL structure and QR images locally. It looks for credential requests, fake payment and refund tactics, KYC pressure, remote access and lookalike links. The result shows which indicators matched and what to check next. See the [dataset audit and before/after evaluation](benchmarks/README.md).
 - **MoneyGuide** contains bilingual lessons from RBI, SEBI Investor and the National Cyber Crime Reporting Portal. It works with the optional AI endpoint off.
 - **Intelligence Hub** stores a risk summary against a sale. One local state write changes the sale status and adds a linked receipt after explicit confirmation. The domain function rejects repeat confirmations.
 - **Onboarding, reporting and privacy** include a clean or fictional workspace, India’s 1930 helpline and official complaint portal, optional scan-summary history, export and whole-workspace deletion.
@@ -34,6 +34,12 @@ Browser UI (English / हिन्दी)
 ```
 
 `public/app.js` renders and wires the app, `public/core.js` contains the domain rules, and `public/guide.js` holds the reviewed content and links. This MVP uses browser JavaScript and a dependency-free Node server. The earlier React, FastAPI and Supabase proposal was simplified so the core demo runs from one folder without cloud credentials.
+
+## QR checks in MoneyShield
+
+Open **MoneyShield → QR check** and choose a PNG, JPEG, or WebP screenshot or photo of up to 10 MB. For payment QR codes, provide an independently known UPI ID or amount if available. The result shows the encoded payment details, recipient or amount mismatches, repeated fields, and suspicious link destinations. Use **Try payee mismatch** or **Try suspicious link** for built-in fictional examples.
+
+Images and decoded values stay in the current screen. MoneyShield does not open QR destinations, launch payment apps, or perform transactions. It assesses supported UPI and web-link payloads. A matching UPI ID or low signal result does not verify a merchant, an unreadable code, or a payment. [QR dataset evaluation](benchmarks/QR.md)
 
 ## Deploy
 

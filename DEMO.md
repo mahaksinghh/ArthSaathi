@@ -22,3 +22,10 @@ For the next run, use a fresh browser profile or use **Privacy & data → Delete
 3. Opt into scan-summary history and run a check. Verify the export contains the score and rule IDs only and no raw scan text. Turn history off and confirm the history is removed.
 4. Open the app at a mobile viewport and switch languages. Verify that the controls and reporting links remain usable.
 5. With no API credentials, verify the sourced topic cards work and the AI panel says it is disabled.
+
+
+## Demo a suspicious QR
+
+Open **MoneyShield → QR check → Try payee mismatch**. The fictional expected ID is `meera@demo`, but the QR encodes `collection@demo`. The assessment shows the mismatch. **Try suspicious link** shows the actual host, `redirect.test`.
+
+For the file-upload demo, use the PNGs in `public/demos/`. Enter `meera@demo` and `2450.00` as the expected details for the UPI examples.
