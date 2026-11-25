@@ -1,3 +1,4 @@
+import { generalAnswer, quickQuestions, containsPrivateDetails } from './general-answers.js';
 import { copy, languages, speechLocales, knowledge, retrieve, explain } from './assistant-knowledge.js';
 
 const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -29,23 +30,28 @@ function answerText(msg) {
   }
   return html+safe(chars.slice(cursor).join(''));
 }
+const kindName = kind=>({
+  math:c('Calculator','कैलकुलेटर','गणक'),fact:c('Quick fact','तुरंत जानकारी','झटपट माहिती'),
+  product:c('ArthSaathi help','ArthSaathi सहायता','ArthSaathi मदत'),
+  web:c('Web answer','वेब उत्तर','वेब उत्तर')
+}[kind]);
 const routeLabels = {overview:'Overview',shield:'MoneyShield',manager:'MoneyManager',guide:'MoneyGuide',hub:'Intelligence Hub',report:'Report fraud',privacy:'Privacy & data'};
 const action = (name,label,cls='secondary') => `<button type="button" class="${cls}" data-assistant="${name}">${label}</button>`;
 
 export function assistantPage(hi, api) {
   if(!initialized) { language=hi?'hi':'en'; initialized=true; }
-  return `<section class="assistant-hero"><div><span class="eyebrow">ARTHSAATHI</span><h1>${c('Your financial assistant','आपका आर्थिक सहायक','तुमचा आर्थिक सहाय्यक')}</h1><p>${c('Ask about this app, money basics or a topic you want to look up.','ऐप, पैसों की बुनियादी बातें या किसी विषय के बारे में पूछें।','अ‍ॅप, पैशांच्या मूलभूत गोष्टी किंवा शोधायच्या विषयाबद्दल विचारा।')}</p></div><div class="assistant-orb" aria-hidden="true">✦</div></section>
-  <div class="assistant-grid"><article class="card pane assistant-chat">
-    <div class="card-head"><div><h2>${c('Ask ArthSaathi','ArthSaathi से पूछें','ArthSaathi ला विचारा')}</h2><p>${api&&online?c('Web answers enabled','वेब उत्तर चालू','वेब उत्तरे सुरू'):c('Built-in answers','ऐप में उपलब्ध उत्तर','अ‍ॅपमधील उत्तरे')}</p></div>${action('clear',c('Clear chat','चैट साफ़ करें','चॅट साफ करा'))}</div>
-    <div id="assistant-thread" class="assistant-thread" role="log" aria-live="polite" aria-relevant="additions text">${messages.length ? messages.map((msg,i)=>`<div class="chat-bubble ${msg.role}"><b>${msg.role==='user'?c('You','आप','तुम्ही'):'ArthSaathi'}</b><div lang="${msg.lang}">${answerText(msg)}</div>${msg.route?`<button type="button" class="text-btn" data-route="${msg.route}">${c('Open','खोलें','उघडा')} · ${routeLabels[msg.route]}</button>`:''}${msg.sources?.length?`<div class="source-row">${msg.sources.map(source=>`<a href="${safe(source.url)}" target="_blank" rel="noopener noreferrer">${safe(source.title)}</a>`).join('')}</div>`:''}${msg.role==='bot'&&speechOut?action('speak:'+i,c('Listen','सुनें','ऐका'),'text-btn'):''}</div>`).join('') : `<div class="chat-welcome"><span class="stat-icon mint" aria-hidden="true">✦</span><p>${c('Ask me how to check a message, record an expense or find an official source.','संदेश जाँचने, खर्च दर्ज करने या आधिकारिक स्रोत ढूँढने के बारे में पूछें।','संदेश तपासणे, खर्च नोंदवणे किंवा अधिकृत स्रोत शोधणे याबद्दल विचारा।')}</p></div>`}
+  return `<section class="assistant-hero"><div><span class="eyebrow"><span aria-hidden="true">✦</span> ASK ARTHSAATHI</span><h1>${c('What’s on your mind?','आज क्या जानना चाहेंगे?','आज काय जाणून घ्यायचे आहे?')}</h1><p>${c('Ask a quick question, work out a calculation, or get help with your money tools.','कोई सवाल पूछें, हिसाब लगाएँ या अपने आर्थिक टूल की मदद लें।','प्रश्न विचारा, हिशोब करा किंवा आर्थिक साधनांची मदत घ्या।')}</p></div><div class="assistant-orb" aria-hidden="true"><span>✦</span><i>✧</i></div></section>
+  <div class="assistant-grid"><article class="card assistant-chat">
+    <div class="assistant-chat-head"><span class="assistant-avatar" aria-hidden="true">✦</span><div><h2>${c('Ask ArthSaathi','ArthSaathi से पूछें','ArthSaathi ला विचारा')}</h2><p>${c('General questions and product help','सामान्य सवाल और ऐप की मदद','सामान्य प्रश्न आणि अ‍ॅपची मदत')}</p></div>${action('clear',c('Clear chat','चैट साफ़ करें','चॅट साफ करा'),'assistant-quiet')}</div>
+    <div id="assistant-thread" class="assistant-thread" role="log" aria-live="polite" aria-relevant="additions text">${messages.length ? messages.map((msg,i)=>`<div class="chat-bubble ${msg.role}"><div class="bubble-head"><b>${msg.role==='user'?c('You','आप','तुम्ही'):'ArthSaathi'}</b>${msg.kind?`<span>${kindName(msg.kind)}</span>`:''}</div><div lang="${msg.lang}">${answerText(msg)}</div>${msg.route?`<button type="button" class="text-btn" data-route="${msg.route}">${c('Open','खोलें','उघडा')} · ${routeLabels[msg.route]}</button>`:''}${msg.sources?.length?`<div class="source-row">${msg.sources.map(source=>`<a href="${safe(source.url)}" target="_blank" rel="noopener noreferrer">${safe(source.title)}</a>`).join('')}</div>`:''}${msg.role==='bot'&&speechOut?action('speak:'+i,c('Listen','सुनें','ऐका'),'text-btn'):''}</div>`).join('') : `<div class="chat-welcome"><span class="assistant-avatar" aria-hidden="true">✦</span><h3>${c('Start with anything you’re curious about','जो जानना चाहें, उससे शुरू करें','जे जाणून घ्यायचे आहे त्यापासून सुरू करा')}</h3><p>${c('Try a question below, type your own, or use the microphone.','नीचे से सवाल चुनें, अपना सवाल लिखें या माइक्रोफ़ोन इस्तेमाल करें।','खालील प्रश्न निवडा, स्वतःचा प्रश्न लिहा किंवा मायक्रोफोन वापरा।')}</p><div class="quick-pills">${Object.entries(quickQuestions).map(([key,words])=>action('quick:'+key,c(...words),'assistant-pill')).join('')}</div></div>`}
     ${busy?`<p class="chat-wait">${c('Looking for an answer…','उत्तर खोज रहे हैं…','उत्तर शोधत आहे…')}</p>`:''}</div>
-    <form id="assistant-form"><label><span>${c('Your question','आपका सवाल','तुमचा प्रश्न')}</span><textarea id="assistant-question" name="assistantQuestion" maxlength="600" required rows="2" placeholder="${c('Type a question…','सवाल लिखें…','प्रश्न लिहा…')}">${safe(draft)}</textarea></label>
-    <div class="assistant-controls"><button class="primary" type="submit" ${busy?'disabled':''}>${c('Send question','सवाल भेजें','प्रश्न पाठवा')}</button>${api&&online?`<button class="secondary" type="submit" value="web" ${busy?'disabled':''}>${c('Search the web','वेब पर खोजें','वेबवर शोधा')}</button>`:''}${Speech?action('mic',listening?c('Stop listening','सुनना रोकें','ऐकणे थांबवा'):c('Speak','बोलें','बोला')):''}${speechOut?action('stop',c('Stop audio','आवाज़ रोकें','आवाज थांबवा')):''}</div>
+    <form id="assistant-form"><label><span>${c('Your question','आपका सवाल','तुमचा प्रश्न')}</span><textarea id="assistant-question" name="assistantQuestion" maxlength="600" required rows="2" placeholder="${c('Ask a question…','सवाल पूछें…','प्रश्न विचारा…')}">${safe(draft)}</textarea></label>
+    <div class="assistant-controls">${Speech?action('mic',listening?c('Stop listening','सुनना रोकें','ऐकणे थांबवा'):c('Speak','बोलें','बोला'),'assistant-quiet'):''}${speechOut?action('stop',c('Stop audio','आवाज़ रोकें','आवाज थांबवा'),'assistant-quiet'):''}<button class="primary assistant-send" type="submit" ${busy?'disabled':''}>${c('Send question','सवाल भेजें','प्रश्न पाठवा')}</button></div>
     <p role="status" class="assistant-notice">${safe(notice)}</p></form></article>
-    <aside class="assistant-side"><article class="card pane"><h2>${c('Language & access','भाषा और पहुँच','भाषा आणि प्रवेश')}</h2><label class="assistant-language"><span>${c('Conversation language','बातचीत की भाषा','संभाषणाची भाषा')}</span><select id="assistant-language">${Object.entries(languages).map(([code,name])=>`<option value="${code}" ${language===code?'selected':''}>${name}</option>`).join('')}</select></label>
-    ${api?`<label class="check"><input type="checkbox" id="assistant-online" ${online?'checked':''}><span>${c('Allow sending my question to the AI provider for web answers','वेब उत्तर के लिए मेरा सवाल एआई प्रदाता को भेजने दें','वेब उत्तरांसाठी माझा प्रश्न AI सेवेकडे पाठवू द्या')}</span></label>`:`<p>${c('Web answers need a configured AI server. Product help and curated lessons are available here.','वेब उत्तरों के लिए एआई सर्वर चाहिए। ऐप की मदद और चुने हुए पाठ यहाँ उपलब्ध हैं।','वेब उत्तरांसाठी AI सर्व्हर आवश्यक आहे. अ‍ॅपची मदत आणि निवडक धडे येथे उपलब्ध आहेत।')}</p>`}
+    <aside class="assistant-side"><article class="card pane assistant-settings"><h2>${c('Make it yours','अपनी पसंद चुनें','तुमची पसंती निवडा')}</h2><label class="assistant-language"><span>${c('Conversation language','बातचीत की भाषा','संभाषणाची भाषा')}</span><select id="assistant-language">${Object.entries(languages).map(([code,name])=>`<option value="${code}" ${language===code?'selected':''}>${name}</option>`).join('')}</select></label>
+    ${api?`<label class="check"><input type="checkbox" id="assistant-online" ${online?'checked':''}><span>${c('Allow AI-powered web answers','एआई वाले वेब उत्तर चालू करें','AI वापरून वेब उत्तरे सुरू करा')}</span></label>`:''}
     <p class="subtle">${Speech?c('Your browser may send audio to its speech service. Keep PINs, OTPs and account details out of questions.','ब्राउज़र आवाज़ अपनी सेवा को भेज सकता है। सवाल में पिन, ओटीपी या खाता विवरण न दें।','ब्राउझर आवाज त्याच्या ओळख सेवेला पाठवू शकतो. PIN, OTP किंवा खाते तपशील प्रश्नात देऊ नका।'):c('Voice input is unavailable in this browser. You can still type a question.','इस ब्राउज़र में आवाज़ इनपुट उपलब्ध नहीं है। आप सवाल लिख सकते हैं।','या ब्राउझरमध्ये आवाज इनपुट उपलब्ध नाही. तुम्ही प्रश्न लिहू शकता।')}</p></article>
-    <article class="card pane"><h2>${c('Try asking','ये सवाल पूछें','हे प्रश्न विचारा')}</h2><div class="prompt-list">${[knowledge[1],knowledge[2],knowledge[3],knowledge[4]].map(item=>action('prompt:'+item.id,c(...item.title))).join('')}</div></article></aside></div>`;
+    <article class="card pane"><h2>${c('Explore ArthSaathi','ArthSaathi जानें','ArthSaathi समजून घ्या')}</h2><div class="prompt-list">${[knowledge[1],knowledge[2],knowledge[3],knowledge[4]].map((item,index)=>action('prompt:'+item.id,`<span aria-hidden="true">${['◇','▥','◫','⌘'][index]}</span><span>${c(...item.title)}</span>`,'assistant-prompt')).join('')}</div></article></aside></div>`;
 }
 function update(focus=false) {
   if(!ready()) return;
@@ -54,29 +60,45 @@ function update(focus=false) {
   if(thread) thread.scrollTop=thread.scrollHeight;
   if(focus) document.querySelector('#assistant-question')?.focus({preventScroll:true});
 }
-async function ask(text, search=false) {
+async function ask(text) {
   const question=text.trim();
   if(!question||question.length>600||busy) return;
   const lang=language, ticket=revision;
+  const reply=answer=>messages.push({role:'bot',lang,...answer});
   messages.push({role:'user',text:question,lang});
   draft=''; notice='';
-  const match=retrieve(question);
-  if(match && !search) {
-    messages.push({role:'bot',lang,text:explain(match,lang),route:match.route,sources:match.url?[{url:match.url,title:match.source}]:[]});
+  const direct=generalAnswer(question,lang);
+  if(direct) { reply(direct); update(true); return; }
+  if(containsPrivateDetails(question)) {
+    reply({text:copy(lang,'Please remove the private numbers or account details and ask again.','निजी नंबर या खाते की जानकारी हटाकर दोबारा पूछें।','खाजगी क्रमांक किंवा खाते तपशील काढून पुन्हा विचारा.')});
     update(true); return;
   }
-  const fallback=c('I couldn’t match that question to the built-in knowledge. Try a product question or an official lesson.','इस सवाल का उत्तर ऐप के ज्ञान में नहीं मिला। किसी सुविधा या आधिकारिक पाठ के बारे में पूछें।','अ‍ॅपच्या माहितीत या प्रश्नाचे उत्तर सापडले नाही. एखाद्या सुविधेबद्दल किंवा अधिकृत धड्याबद्दल विचारा।');
-  if(!online) { messages.push({role:'bot',lang,text:fallback}); update(true); return; }
-  busy=true; request=new AbortController(); update();
+  const match=retrieve(question);
+  if(match) {
+    reply({text:explain(match,lang),route:match.route,kind:'product',sources:match.url?[{url:match.url,title:match.source}]:[]});
+    update(true); return;
+  }
+  const clarification={text:copy(lang,
+    'I couldn’t verify a relevant answer. Can you rephrase the question or name the specific topic?',
+    'मुझे इस सवाल का भरोसेमंद जवाब नहीं मिला। सवाल दूसरे शब्दों में या विषय का नाम लिखकर पूछ सकते हैं?',
+    'या प्रश्नाचे विश्वासार्ह उत्तर सापडले नाही. प्रश्न वेगळ्या शब्दांत किंवा विषयाचे नाव देऊन विचाराल का?')};
+  if(!online) { reply(clarification); update(true); return; }
+  const controller=new AbortController();
+  busy=true; request=controller; update();
+  let answer;
   try {
-    const res=await fetch('./api/assistant',{method:'POST',signal:request.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({question,language:lang,consent:true})});
+    const res=await fetch('./api/assistant',{method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({question,language:lang,consent:true})});
     const data=await res.json();
-    if(!res.ok || typeof data.answer!=='string') throw Error('provider');
-    if(ticket===revision) messages.push({role:'bot',lang,text:data.answer,sources:data.sources,citations:data.citations});
-  } catch {
-    if(ticket===revision) messages.push({role:'bot',lang,text:copy(lang,'Web answers are temporarily unavailable. The built-in lessons are still available.','वेब उत्तर अभी उपलब्ध नहीं हैं। ऐप के पाठ उपलब्ध हैं।','वेब उत्तरे सध्या उपलब्ध नाहीत. अ‍ॅपमधील धडे वापरता येतील।')});
-  } finally { if(ticket===revision) { busy=false; request=null; update(true); } }
+    if(res.ok && typeof data.answer==='string' && data.answer.trim()) answer={text:data.answer,kind:'web',sources:data.sources,citations:data.citations};
+  } catch { /* A failed provider request leaves no verified answer to display. */ }
+  finally {
+    if(ticket===revision) {
+      reply(answer || clarification);
+      busy=false; request=null; update(true);
+    }
+  }
 }
+
 export function clearAssistant() {
   revision++; request?.abort(); request=null; busy=false; messages.length=0; draft=''; notice=''; online=false;
   if(recognition) { const current=recognition; recognition=null; current.abort(); }
@@ -91,12 +113,13 @@ export function wireAssistant(app, render, isOpen) {
   });
   app.addEventListener('submit',event=>{
     if(event.target.id!=='assistant-form') return;
-    event.preventDefault(); void ask(draft, event.submitter?.value==='web');
+    event.preventDefault(); void ask(draft);
   });
   app.addEventListener('click',event=>{
     const command=event.target.closest('[data-assistant]')?.dataset.assistant;
     if(!command) return;
     if(command==='clear') { clearAssistant(); update(true); }
+    if(command.startsWith('quick:')) {const question=quickQuestions[command.slice(6)]; if(question) void ask(c(...question));}
     if(command==='stop') speechOut?.cancel();
     if(command.startsWith('speak:')) {
       const msg=messages[Number(command.slice(6))];

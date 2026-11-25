@@ -13,7 +13,7 @@ export const knowledge = [
     'Open MoneyShield, paste a message or URL and select Check for risk. It shows a rule-based score and the signals that matched, such as urgent wording, PIN or OTP mentions or suspicious link structure. It never visits the link. A low score does not establish safety.',
     'MoneyShield खोलें, संदेश या यूआरएल चिपकाएँ और जोखिम जाँचें चुनें। स्कोर और मिले संकेत दिखेंगे, जैसे जल्दबाज़ी, पिन या ओटीपी का ज़िक्र और संदिग्ध लिंक। ऐप लिंक नहीं खोलता। कम स्कोर से सुरक्षा साबित नहीं होती।',
     'MoneyShield उघडा, संदेश किंवा URL पेस्ट करा आणि जोखीम तपासा निवडा. घाईची भाषा, PIN किंवा OTP चा उल्लेख किंवा संशयास्पद लिंक असे संकेत दिसतील. अ‍ॅप लिंक उघडत नाही. कमी गुण सुरक्षिततेची खात्री देत नाहीत।'],route:'shield'},
-  {id:'manager', keywords:'moneymanager ledger business personal sales budget expense income money cash chart khata dues payable ग्राहक बहीखाता खर्च बजट आय आमदनी बकाया उत्पन्न अंदाजपत्रक थकबाकी',title:['How do I track expenses and dues?','खर्च और बकाया कैसे दर्ज करूँ?','खर्च आणि थकबाकी कशी नोंदवू?'],text:[
+  {id:'manager', keywords:'moneymanager ledger business personal sales budget expense income cash chart khata dues payable ग्राहक बहीखाता खर्च बजट आय आमदनी बकाया उत्पन्न अंदाजपत्रक थकबाकी',title:['How do I track expenses and dues?','खर्च और बकाया कैसे दर्ज करूँ?','खर्च आणि थकबाकी कशी नोंदवू?'],text:[
     'Open MoneyManager and select Personal or Business. Use Add a ledger entry for income or expenses, and set a monthly spending budget next to the cash-flow chart. In Business, add unpaid sales under Customer dues. They remain outside income until you record confirmation in the Hub.',
     'MoneyManager में व्यक्तिगत या व्यवसाय चुनें। आमदनी या खर्च के लिए बहीखाते में रिकॉर्ड जोड़ें और चार्ट के पास मासिक बजट तय करें। व्यवसाय में ग्राहक के बकाया के तहत अवैतनिक बिक्री जोड़ें। हब में पुष्टि के बाद ही यह आमदनी में शामिल होगी।',
     'MoneyManager मध्ये वैयक्तिक किंवा व्यवसाय निवडा. उत्पन्न किंवा खर्चाची नोंद करा आणि चार्टजवळ मासिक खर्च मर्यादा ठरवा. व्यवसायात ग्राहकांच्या थकबाकीत न भरलेली विक्री नोंदवा. हबमध्ये पुष्टी केल्यानंतरच ती उत्पन्नात जोडली जाते।'],route:'manager'},
@@ -25,7 +25,7 @@ export const knowledge = [
     'Check the message in MoneyShield and choose Link to a sale. Select the pending sale and link the risk summary. Independently check the matching incoming credit in your own official bank or UPI app. In the Hub, check the attestation and record your confirmation. ArthSaathi records the receipt and cannot verify the bank payment itself.',
     'MoneyShield में संदेश जाँचकर बिक्री से जोड़ें चुनें। लंबित बिक्री चुनें और जोखिम सारांश जोड़ें। अपने बैंक या यूपीआई ऐप में जमा राशि अलग से देखें। हब में पुष्टि का विकल्प चुनकर दर्ज करें। ArthSaathi रसीद दर्ज करता है और खुद बैंक भुगतान सत्यापित नहीं कर सकता।',
     'MoneyShield मध्ये संदेश तपासा आणि तो प्रलंबित विक्रीशी जोडा. तुमच्या अधिकृत बँक किंवा UPI अ‍ॅपमध्ये जमा रक्कम स्वतंत्रपणे तपासा. हबमध्ये पुष्टीची खूण करून तुमची पुष्टी नोंदवा. ArthSaathi पावती नोंदवते, बँक पेमेंट स्वतः तपासत नाही।'],route:'hub'},
-  {id:'privacy',keywords:'privacy export delete history data saved storage sync local consent microphone गोपनीयता डेटा मिटाएँ स्टोरेज इतिहास निर्यात हटाएँ गोपनीयता माहिती काढा',title:['Where is my data saved?','मेरा डेटा कहाँ सहेजा जाता है?','माझा डेटा कुठे साठवला जातो?'],text:[
+  {id:'privacy',keywords:'privacy export delete history saved storage sync consent microphone गोपनीयता डेटा मिटाएँ स्टोरेज इतिहास निर्यात हटाएँ गोपनीयता माहिती काढा',title:['Where is my data saved?','मेरा डेटा कहाँ सहेजा जाता है?','माझा डेटा कुठे साठवला जातो?'],text:[
     'Your records stay in this browser. Privacy & data lets you export or delete the workspace, clear the current scan and opt into summary history. This assistant does not read financial records. If you enable online answers, the typed or transcribed question can go to the AI provider. Browser speech recognition may also use its own online service.',
     'आपके रिकॉर्ड इसी ब्राउज़र में रहते हैं। गोपनीयता और डेटा से निर्यात, मिटाना, मौजूदा जाँच साफ़ करना और इतिहास चालू करना संभव है। सहायक वित्तीय रिकॉर्ड नहीं पढ़ता। ऑनलाइन उत्तर चालू करने पर सवाल एआई प्रदाता तक जा सकता है। आवाज़ पहचान के लिए ब्राउज़र अपनी ऑनलाइन सेवा इस्तेमाल कर सकता है।',
     'तुमच्या नोंदी याच ब्राउझरमध्ये राहतात. गोपनीयता आणि डेटा विभागातून निर्यात, हटवणे आणि तपासणी इतिहास नियंत्रित करता येतो. सहाय्यक आर्थिक नोंदी वाचत नाही. ऑनलाइन उत्तरे सुरू केल्यावर प्रश्न AI सेवेकडे जाऊ शकतो. आवाज ओळखण्यासाठी ब्राउझर स्वतःची ऑनलाइन सेवा वापरू शकतो।'],route:'privacy'}
@@ -46,10 +46,14 @@ export function retrieve(question) {
   const forced = /\b1930\b|\b(?:report|file) (?:a |the )?(?:scam|fraud|complaint)\b|शिकायत|तक्रार/.test(normalized) ? 'report' :
     normalized.match(/\bmoney(shield|manager|guide)\b/)?.[1];
   if(forced) return [...knowledge,...lessons].find(item=>item.id===forced);
+  if(/\barthsaathi\b|अर्थसाथी|अर्थ साथी/i.test(normalized)) return knowledge[0];
+  const title=[...knowledge,...lessons].find(item=>item.title.some(value=>tokenize(value).join(' ')===tokenize(normalized).join(' ')));
+  if(title) return title;
   return [...knowledge,...lessons].map(item=>{
     const terms=new Set(tokenize(item.keywords));
-    return {item, score:[...words].filter(word=>terms.has(word)).length};
-  }).filter(row=>row.score).sort((a,b)=>b.score-a.score)[0]?.item;
+    const hits=[...words].filter(word=>terms.has(word)).length;
+    return {item, score:hits};
+  }).filter(row=>row.score>=2 && row.score / words.size >= .5).sort((a,b)=>b.score-a.score)[0]?.item;
 }
 export function explain(item, language) {
   return item?.text[{en:0,hi:1,mr:2}[language] ?? 0];
