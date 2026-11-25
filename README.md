@@ -19,7 +19,7 @@ See [DEMO.md](DEMO.md) for the presentation script and repeatable checks. Use a 
 ## Product and architecture
 
 - **Overview and MoneyManager** show separate personal and business ledgers, monthly totals, daily charts, spending budgets and digital khata. Money is represented as integer paise. Pending dues are tracked apart from collected income.
-- **MoneyShield** checks pasted text and URL structure locally. Each rule contributes once, the total is capped at 100, and explanations show every matched rule. Scores are uncalibrated heuristics. The app neither opens links nor uses reputation services.
+- **MoneyShield** checks pasted text and URL structure locally. It looks for credential requests, fake payment and refund tactics, KYC pressure, remote access and lookalike links. The result shows which indicators matched and what to check next. See the [dataset audit and before/after evaluation](benchmarks/README.md).
 - **MoneyGuide** contains bilingual lessons from RBI, SEBI Investor and the National Cyber Crime Reporting Portal. It works with the optional AI endpoint off.
 - **Intelligence Hub** stores a risk summary against a sale. One local state write changes the sale status and adds a linked receipt after explicit confirmation. The domain function rejects repeat confirmations.
 - **Onboarding, reporting and privacy** include a clean or fictional workspace, India’s 1930 helpline and official complaint portal, optional scan-summary history, export and whole-workspace deletion.

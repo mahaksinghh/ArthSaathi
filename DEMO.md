@@ -7,7 +7,7 @@ Before presenting, run `npm start` and open the app in a clean browser profile. 
 | Time | Show | Say |
 | --- | --- | --- |
 | 0:00–0:25 | Overview, daily chart and personal/business toggle | “A neighbourhood shop can see what it collected, what it spent and what customers still owe.” |
-| 0:25–0:55 | MoneyShield → Use demo message → Check for risk | “Someone claims they sent ₹2,450 and asks the shopkeeper to enter a PIN. The rules show the credential request, urgency and link signals. The score is a warning, not a fraud probability.” |
+| 0:25–0:55 | MoneyShield → Use demo scam → Check for risk | “Someone claims they sent ₹2,450 and asks the shopkeeper to enter a PIN. The rules show the the PIN-to-release-payment request, urgency and link signals. The score is a warning, not a fraud probability.” |
 | 0:55–1:35 | Link to a sale → Meera Stores → Link risk summary | “The claim is attached to the open sale. Cash flow stays unchanged. In real use the shopkeeper opens their own bank or UPI app and checks the incoming credit independently.” |
 | 1:35–2:00 | Check the fictional demo attestation and record confirmation | “Only the shopkeeper’s confirmation moves ₹2,450 into recorded income. ArthSaathi records their decision and has no connection to the bank.” |
 | 2:00–2:25 | MoneyManager → ledger and budget, then reload | “Meera Stores has one receipt. The open dues fell by the same amount. The workspace survives a refresh.” |

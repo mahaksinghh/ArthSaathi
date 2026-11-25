@@ -5,16 +5,17 @@ import { assess, sample, blank, confirmSale, totals, paisa, today } from '../pub
 test('demo payment is high risk with independent, deduplicated reasons', () => {
   const result = assess(sample);
   assert.equal(result.level, 'high');
-  assert.deepEqual(result.signals, ['secret','urgent','claim','http','lure']);
+  assert.deepEqual(result.signals, ['receiveTrap','urgent','http','lure']);
   assert.equal(result.score, 100);
-  assert.equal(assess('OTP OTP OTP').score, 40);
+  assert.equal(assess('OTP OTP OTP').score, 0);
+  assert.deepEqual(assess('Reply with the OTP. Send the OTP.').signals, ['secretRequest']);
 });
 test('Hindi KYC and PIN lures are detected', () => {
   assert.equal(assess('तुरंत केवाईसी करें और यूपीआई पिन डालें').level, 'high');
 });
 test('URL shape indicators include shortened links and embedded credentials', () => {
   assert.ok(assess('bit.ly/example').signals.includes('short'));
-  assert.ok(assess('https://bank.example@127.0.0.1/verify').signals.includes('host'));
+  assert.ok(assess('https://bank.example@127.0.0.1/verify').signals.includes('urlCredentials'));
   assert.equal(assess('Thank you').score, 0);
   assert.throws(()=>assess(' '));
 });

@@ -13,6 +13,7 @@ test('local app serves assets and reports that AI is off without credentials', a
   await withServer({},async base=>{
     assert.match(await (await fetch(base)).text(),/ArthSaathi/);
     assert.match((await fetch(base + '/app.js')).headers.get('content-type'),/javascript/);
+    assert.match(await (await fetch(base + '/moneyshield.js')).text(), /export function assess/);
     assert.deepEqual(await (await fetch(base + '/api/status')).json(),{llm:false});
     assert.equal((await fetch(base + '/api/guide',{method:'POST'})).status,503);
     assert.equal((await fetch(base + '/.env')).status,404);

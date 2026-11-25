@@ -8,7 +8,7 @@ import { knowledge, lessons, explain, languages } from './public/assistant-knowl
 const folder = dirname(fileURLToPath(import.meta.url));
 const files = new Map([
   ['/', ['index.html', 'text/html; charset=utf-8']],
-  ...['index.html', 'app.js', 'core.js', 'guide.js', 'assistant.js', 'assistant-knowledge.js', 'general-answers.js', 'style.css', 'mark.svg'].map(file => [
+  ...['index.html', 'app.js', 'core.js', 'guide.js', 'assistant.js', 'assistant-knowledge.js', 'general-answers.js', 'moneyshield.js', 'style.css', 'mark.svg'].map(file => [
     '/' + file, [file, file.endsWith('.js') ? 'text/javascript; charset=utf-8' :
       file.endsWith('.css') ? 'text/css; charset=utf-8' : file.endsWith('.svg') ? 'image/svg+xml' : 'text/html; charset=utf-8']
   ])

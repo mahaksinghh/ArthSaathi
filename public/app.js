@@ -1,8 +1,9 @@
 import { assess, blank, confirmSale, totals, today, sample, clean, paisa, id } from './core.js';
-import { topics, signals } from './guide.js';
+import { topics, signals, safetyActions } from './guide.js';
 import { assistantPage, wireAssistant, clearAssistant } from './assistant.js';
 
 const key = 'arthsaathi.v1';
+const receiptSample = 'Payment received: ₹2,450. Demo reference TX-2450. Check your transaction history in your UPI app.';
 const app = document.querySelector('#app');
 let state;
 let storageError = false;
@@ -109,18 +110,29 @@ function overview() {
   return `<div class="hero"><div><span class="eyebrow">${t('YOUR FINANCIAL WORKSPACE','आपका आर्थिक कार्यक्षेत्र')}</span><h1>${t('Your money, in focus.','आपके पैसों की साफ़ तस्वीर।')}</h1><p>${t('Track what comes in, see what goes out, and check suspicious payments before you act.','आमदनी और खर्च देखें, और किसी संदिग्ध भुगतान पर कदम उठाने से पहले उसकी जाँच करें।')}</p><div class="hero-actions">${nav('shield',t('Check a message','संदेश जाँचें'),'primary')}${nav('manager',t('Open ledger','बहीखाता खोलें'),'outline')}${nav('assistant',t('Ask ArthSaathi','ArthSaathi से पूछें'),'outline')}</div></div><div class="hero-art" aria-hidden="true"><div class="orbit"></div><div class="orbit two"></div><div class="orbit three"></div><div class="hero-mark"><img src="./mark.svg" alt=""></div><i></i><b></b></div></div>
     <div class="overview-title"><h2>${t('Financial snapshot','आर्थिक झलक')}</h2>${modeSwitch()}</div>${stats()}<div class="dashboard-grid">${chart()}<article class="card spotlight"><span class="stat-icon mint" aria-hidden="true">⌘</span><h2>${t('Intelligence Hub','इंटेलिजेंस हब')}</h2><p>${t('Connect a suspicious payment message to an open sale and record your own confirmation after checking your bank app.','संदिग्ध भुगतान संदेश को लंबित बिक्री से जोड़ें और बैंक ऐप देखने के बाद अपनी पुष्टि दर्ज करें।')}</p><div class="spot-count"><strong>${state.sales.filter(s=>s.status==='pending').length}</strong> ${t('sales awaiting payment','बिक्री के भुगतान बाकी')}</div>${nav('hub',t('Open Intelligence Hub','इंटेलिजेंस हब खोलें'),'secondary')}</article></div>`;
 }
+function riskReasons(scan) {
+  return scan.signals.flatMap(key=>Object.hasOwn(signals,key)?[topicText(signals[key])]:[]);
+}
 function showRisk(scan) {
-  const label = {high:t('High risk','अधिक जोखिम'),medium:t('Needs caution','सावधानी ज़रूरी'),low:t('Few or no signals','कम या कोई संकेत नहीं')};
-  return `<div class="risk ${scan.level}"><div class="risk-score"><strong>${scan.score}</strong><span>/ 100</span></div><div><h3>${label[scan.level]}</h3><p>${t('Rule-based score. A low score cannot establish safety.','नियमों पर आधारित स्कोर। कम स्कोर से सुरक्षा साबित नहीं होती।')}</p></div></div>
-  <ul class="signal-list">${scan.signals.map(k=>`<li>${topicText(signals[k])}</li>`).join('') || `<li>${t('No configured rules matched. Check independently before acting.','कोई तय नियम नहीं मिला। कदम उठाने से पहले खुद जाँचें।')}</li>`}</ul>
-  <div class="notice">${t('Open your own bank or UPI app to check for an incoming credit. Avoid links and requests for a PIN in the message.','जमा राशि देखने के लिए अपना बैंक या यूपीआई ऐप खोलें। संदेश के लिंक और पिन माँगने वाले अनुरोध से बचें।')}</div>`;
+  const label = {high:t('High risk','अधिक जोखिम'),medium:t('Review before acting','कदम उठाने से पहले जाँचें'),low:t('Few or no signals','कम या कोई संकेत नहीं')};
+  const reasons = riskReasons(scan);
+  const action = safetyActions.find(([keys])=>keys.some(key=>scan.signals.includes(key)))?.[1];
+  const details = scan.version===2 ? t('Risk indicator score. Check the claim independently before acting.','जोखिम संकेतों का स्कोर। कदम उठाने से पहले दावे की खुद जाँच करें।') :
+    t('Saved result from the earlier detector. Rescan to use the updated checks.','पुराने डिटेक्टर का सहेजा परिणाम। नए नियमों से दोबारा जाँच सकते हैं।');
+  return `<div class="risk ${scan.level}"><div class="risk-score"><strong>${scan.score}</strong><span>/ 100</span></div><div><h3>${label[scan.level]}</h3><p>${details}</p></div></div>
+  <ul class="signal-list">${reasons.map(reason=>`<li>${reason}</li>`).join('') || `<li>${t('No matching indicators in this text. A receipt or message alone cannot confirm payment.','इस टेक्स्ट में कोई संकेत नहीं मिला। रसीद या संदेश से अकेले भुगतान की पुष्टि नहीं होती।')}</li>`}</ul>
+  <div class="notice"><strong>${t('What to do','अगला कदम')}</strong><div>${action ? topicText(action) : t('Open the bank or UPI app you normally use to check the claim or incoming credit.','दावा या जमा राशि जाँचने के लिए अपना नियमित बैंक या यूपीआई ऐप खोलें।')}</div></div>`;
+}
+function assessment() {
+  return result ? `${showRisk(result)}<div class="actions">${nav('hub',t('Link to a sale','बिक्री से जोड़ें'),'primary')}${nav('report',t('Reporting help','शिकायत सहायता'),'secondary')}</div>` :
+    `<div class="empty">${t('Run a check to see the score, matched signals and next step.','स्कोर, मिले संकेत और अगला कदम देखने के लिए जाँच चलाएँ।')}</div>`;
 }
 function shield() {
   return `${section('MoneyShield', t('Check a message or URL for explainable scam signals.','संदेश या यूआरएल में धोखाधड़ी के संकेत और उनके कारण देखें।'))}
     <div class="two-grid"><article class="card pane"><h2>${t('Message & link check','संदेश और लिंक जाँच')}</h2><p>${t('Analysis runs in this browser. Links are never opened.','जाँच इसी ब्राउज़र में होती है। लिंक नहीं खोले जाते।')}</p>
-    <form id="scan">${label(t('Paste a message or URL','संदेश या यूआरएल चिपकाएँ'),`<textarea name="message" required maxlength="4000" rows="6" placeholder="${t('Paste the suspicious text here…','संदिग्ध संदेश यहाँ चिपकाएँ…')}">${esc(draft)}</textarea>`)}<div class="actions">${submit(t('Check for risk','जोखिम जाँचें'))}${btn('sample',t('Use demo message','डेमो संदेश लें'),'secondary')}</div></form></article>
-    <article class="card pane"><h2>${t('Risk assessment','जोखिम आकलन')}</h2>${result ? `${showRisk(result)}<div class="actions">${nav('hub',t('Link to a sale','बिक्री से जोड़ें'),'primary')}${nav('report',t('Reporting help','शिकायत सहायता'),'secondary')}</div>` : `<div class="empty">${t('Run a check to see the score and the rules that matched.','स्कोर और मिले नियम देखने के लिए जाँच चलाएँ।')}</div>`}</article></div>
-    ${state.keepScans ? `<article class="card pane spaced"><h2>${t('Scan history','जाँच का इतिहास')}</h2><p>${t('Scores and matched rules only.','केवल स्कोर और मिले नियम।')}</p>${state.scans.map(s=>`<div class="line"><span>${dateText(s.date)} · ${s.signals.map(k=>topicText(signals[k])).join(' ') || t('No matches','कोई संकेत नहीं')}</span><b>${s.score}/100</b></div>`).join('') || `<p>${t('No saved checks.','कोई सहेजी जाँच नहीं।')}</p>`}</article>` : ''}`;
+    <form id="scan">${label(t('Paste a message or URL','संदेश या यूआरएल चिपकाएँ'),`<textarea name="message" required maxlength="4000" rows="6" placeholder="${t('Paste the suspicious text here…','संदिग्ध संदेश यहाँ चिपकाएँ…')}">${esc(draft)}</textarea>`)}<div class="actions">${submit(t('Check for risk','जोखिम जाँचें'))}${btn('sample',t('Use demo scam','डेमो धोखा लें'),'secondary')}${btn('sample-receipt',t('Use demo receipt','डेमो रसीद लें'),'secondary')}</div></form></article>
+    <article class="card pane"><h2>${t('Risk assessment','जोखिम आकलन')}</h2><div id="scan-result" aria-live="polite">${assessment()}</div></article></div>
+    ${state.keepScans ? `<article class="card pane spaced"><h2>${t('Scan history','जाँच का इतिहास')}</h2><p>${t('Scores and matching indicators only.','केवल स्कोर और मिले संकेत।')}</p>${state.scans.map(s=>`<div class="line"><span>${dateText(s.date)} · ${riskReasons(s).join(' ') || t('No matches','कोई संकेत नहीं')}</span><b>${s.score}/100</b></div>`).join('') || `<p>${t('No saved checks.','कोई सहेजी जाँच नहीं।')}</p>`}</article>` : ''}`;
 }
 function manager() {
   const {entries, expense} = totals(state, mode, month());
@@ -178,7 +190,14 @@ function privacy() {
     <article class="card pane"><h2>${t('Delete workspace','कार्यक्षेत्र मिटाएँ')}</h2><p>${t('This removes all ArthSaathi records from this browser and returns to onboarding.','इससे इस ब्राउज़र से ArthSaathi के सभी रिकॉर्ड मिट जाएँगे और शुरुआती स्क्रीन खुलेगी।')}</p>${btn('delete',t('Delete local data','स्थानीय डेटा मिटाएँ'),'danger')}</article></div>`;
 }
 
-app.addEventListener('input', e => { if (e.target.name==='message') draft=e.target.value; });
+app.addEventListener('input', e => {
+  if (e.target.name!=='message') return;
+  draft=e.target.value;
+  if (result) {
+    result=null;
+    document.querySelector('#scan-result').innerHTML=assessment();
+  }
+});
 app.addEventListener('change', e => {
   if (e.target.id==='period') { period=Number(e.target.value); render(); document.querySelector('#period')?.focus(); }
   if (e.target.id==='history') {
@@ -197,7 +216,7 @@ app.addEventListener('click', e => {
   if (topic) { selectedTopic=topic; answer=''; render(); document.querySelector(`[data-topic="${topic}"]`)?.focus(); }
   if (action==='language') { hi=!hi; if(state) persist({...state,language:hi?'hi':'en'}); render(); document.querySelector('[data-action="language"]')?.focus(); }
   if (action==='demo'||action==='empty') { mode='business'; persist({...blank(action==='demo'),language:hi?'hi':'en',mode}); navigate('overview'); }
-  if (action==='sample') { draft=sample; render(); document.querySelector('[name="message"]').focus(); }
+  if (action==='sample' || action==='sample-receipt') { draft=action==='sample' ? sample : receiptSample; result=null; render(); document.querySelector('[name="message"]').focus(); }
   if (action?.startsWith('select:')) { selectedSale=action.slice(7); render(); document.querySelector('#confirm input')?.focus(); }
   if (action==='clear-scan') { draft=''; result=null; toast(t('Current scan cleared.','मौजूदा जाँच साफ़ है।')); }
   if (action==='export') {
@@ -262,6 +281,7 @@ app.addEventListener('submit', async e => {
     if (type==='link') document.querySelector('#confirm input')?.focus();
     else if (type==='scan') document.querySelector('.risk')?.scrollIntoView({block:'nearest'});
   } catch {
+    if (type==='scan') { toast(t('Enter a message or link of up to 4,000 characters.','चार हज़ार अक्षरों तक का संदेश या लिंक डालें।')); return; }
     toast(t('Check the required fields and use an amount greater than zero with up to two decimal places.','ज़रूरी फ़ील्ड देखें। राशि शून्य से अधिक हो और दशमलव के बाद अधिकतम दो अंक हों।'));
   }
 });
