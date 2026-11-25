@@ -51,9 +51,11 @@ For a Node host, set those environment variables using the host's secret setting
 
 Data lives in the current browser profile and origin. It does not sync across devices and is not encrypted by ArthSaathi. Raw scan text stays in memory until it is cleared or the tab closes. Scan history is off by default. Disabling it removes saved history, while a linked risk summary remains part of its sale until workspace deletion. Exports are local JSON snapshots. This MVP has no import, account sign-in, cloud backup, signed receipts, or bank connection. Use one tab for editing during the demo. Voice input, OCR, automatic monitoring, credit-readiness reporting, savings goals, bill reminders and native apps are outside this build.
 
-## Covexcode
+## Covexcode CLI
 
-Covexcode is named on the [HackNova event listing](https://devnovate.co/event/hacknova-2026). No Covexcode tool or command was available in this workspace, so it was not used. If the organisers provide access, open this project in the tool using their onboarding instructions. A bounded task for the team is to add a missing Hindi URL-rule test or review the sale confirmation path. Review the diff, run `npm test` and `npm run build`, and record the actual tool use for submission. Keep API keys and real financial data out of prompts.
+Covexcode CLI v1.18.0 was used on 25 November 2026 for a development-time QA review of MoneyShield’s fictional QR mismatch scenario. The CLI was connected to a local Qwen2.5 model. Its reply changed the scanned ID, so the team rejected that detail and added an exact-identifier regression check. The released app’s opening screen and dashboard link to the prompt, CLI reply, and verified result.
+
+[CLI usage evidence](https://arthsaathi-rosy.vercel.app/build-evidence.html) · [Official Covexcode release](https://github.com/HolboxAI/covexcode/releases/tag/v1.18.0)
 
 ## Ask ArthSaathi
 
