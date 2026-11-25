@@ -21,7 +21,7 @@ For the next run, use a fresh browser profile or use **Privacy & data → Delete
 2. Add an unpaid business sale. Linking a scan to it must preserve income. Leave the attestation unchecked and attempt submission. Check it, submit again, and confirm that only one linked income entry appears after reload.
 3. Opt into scan-summary history and run a check. Verify the export contains the score and rule IDs only and no raw scan text. Turn history off and confirm the history is removed.
 4. Open the app at a mobile viewport and switch languages. Verify that the controls and reporting links remain usable.
-5. With no API credentials, verify the sourced topic cards work and the AI panel says it is disabled.
+5. In MoneyGuide, choose **UPI payment safety → Explain with AI**. Check that the explanation is about the selected lesson and that the official source link is visible. With no local API credentials, verify that the same button shows a labeled **Guide example**. Switch to Hindi and explain another topic.
 
 
 ## Demo a suspicious QR

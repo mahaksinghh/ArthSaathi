@@ -1,6 +1,7 @@
 import { assess, attachSaleQrReview, blank, confirmSale, totals, today, sample, clean, paisa, id } from './core.js';
-import { topics, signals, safetyActions } from './guide.js';
+import { topics, guideExamples, signals, safetyActions } from './guide.js';
 import { assistantPage, wireAssistant, clearAssistant } from './assistant.js';
+import { containsPrivateDetails } from './general-answers.js';
 import { qrPanel, wireQrPanel, clearQrPanel, prepareSaleQr } from './qr-panel.js';
 import { qrSignals } from './qr-risk.js';
 
@@ -22,8 +23,7 @@ let result = null;
 let selectedTopic = 'upi';
 let selectedSale = isolatedDemo ? 'demo-sale' : '';
 let api = false;
-let answer = '';
-let busy = false;
+const guideExplanations = new Map();
 let toastTimer;
 
 const t = (en, hindi) => hi ? hindi : en;
@@ -209,14 +209,54 @@ function hub() {
     <p>${t('ArthSaathi does not contact your bank or initiate a payment.','ArthSaathi बैंक से संपर्क नहीं करता और भुगतान शुरू नहीं करता।')}</p>
     ${nav('guide',t('Read UPI safety guide','यूपीआई सुरक्षा गाइड पढ़ें'),'secondary')}</article></div>`;
 }
+const guideExplanationKey = () => selectedTopic + '/' + (hi ? 'hi' : 'en');
+function guideExplanationContent(explanation) {
+  if (!explanation) return '';
+  if (explanation.loading) return `<p class="notice">${t('Preparing the explanation…','व्याख्या तैयार हो रही है…')}</p>`;
+  return `<div class="notice"><strong>${explanation.kind === 'ai' ? t('AI explanation','एआई व्याख्या') : t('Guide example','गाइड का उदाहरण')}</strong>${explanation.kind === 'guide' ? `<p class="subtle">${t('AI is temporarily unavailable. Here is an example from MoneyGuide.','एआई अभी उपलब्ध नहीं है। यह उदाहरण MoneyGuide से है।')}</p>` : ''}<p class="answer">${esc(explanation.answer)}</p></div>`;
+}
+function guideExplanationLabel(explanation) {
+  if (explanation?.loading) return t('Preparing explanation…','व्याख्या तैयार हो रही है…');
+  if (explanation?.kind === 'ai') return t('AI explanation ready','एआई व्याख्या तैयार है');
+  if (explanation?.kind === 'guide') return t('Try AI again','एआई फिर आज़माएँ');
+  return t('Explain with AI','एआई से समझें');
+}
+async function explainGuide() {
+  const key = guideExplanationKey();
+  const topic = selectedTopic;
+  const language = hi ? 'hi' : 'en';
+  const previous = guideExplanations.get(key);
+  if (previous?.loading || previous?.kind === 'ai') return;
+  const update = explanation => {
+    guideExplanations.set(key, explanation);
+    if (route !== 'guide' || guideExplanationKey() !== key || !state) return;
+    const button = app.querySelector('[data-action="explain-guide"]');
+    button.disabled = Boolean(explanation.loading || explanation.kind === 'ai');
+    button.textContent = guideExplanationLabel(explanation);
+    app.querySelector('#guide-explanation').innerHTML = guideExplanationContent(explanation);
+  };
+  update({loading:true});
+  const fallback = {kind:'guide',answer:guideExamples[topic][language === 'hi' ? 1 : 0]};
+  try {
+    const query = new URLSearchParams({topic,language});
+    const response = await fetch('./api/guide?' + query, {signal:AbortSignal.timeout(13_000)});
+    const payload = response.ok ? await response.json() : null;
+    update(['ai','guide'].includes(payload?.kind) && typeof payload.answer === 'string' && payload.answer.trim() ? payload : fallback);
+  } catch { update(fallback); }
+}
 function guide() {
   const topic = topics.find(item=>item.id===selectedTopic);
+  const explanation = guideExplanations.get(guideExplanationKey());
   return `${section('MoneyGuide',t('Practical money guidance from official Indian sources.','भारत के आधिकारिक स्रोतों से पैसे से जुड़ी व्यावहारिक सलाह।'))}
     <div class="topic-grid">${topics.map(item=>`<button type="button" class="card topic" data-topic="${item.id}" aria-pressed="${item.id===selectedTopic}"><span class="stat-icon mint" aria-hidden="true">${item.icon}</span><b>${topicText(item.title)}</b><small>${item.source}</small></button>`).join('')}</div>
-    <article class="card pane spaced"><h2>${topicText(topic.title)}</h2><p>${topicText(topic.body)}</p><a class="secondary link" href="${topic.url}" target="_blank" rel="noopener noreferrer">${t('Read source','स्रोत पढ़ें')} · ${topic.source}</a></article>
-    <article class="card pane spaced"><h2>${t('Optional AI explanation','वैकल्पिक एआई व्याख्या')}</h2><p>${api ? t('With your consent, your question and the selected lesson are sent to the configured AI provider. Keep personal and financial details out.','आपकी सहमति से प्रश्न और चुना पाठ एआई प्रदाता को भेजे जाते हैं। निजी या वित्तीय जानकारी न डालें।') : t('AI is disabled here. The sourced lessons above work without it.','यहाँ एआई बंद है। ऊपर दिए गए स्रोत आधारित पाठ इसके बिना चलते हैं।')}</p>
-    ${api ? `<form id="ask">${label(t('Question about this lesson','इस पाठ के बारे में प्रश्न'),'<textarea name="question" required maxlength="500" rows="3"></textarea>')}<label class="check"><input name="consent" type="checkbox" required><span>${t('Send this question to the AI provider.','यह प्रश्न एआई प्रदाता को भेजें।')}</span></label><button type="submit" class="primary" ${busy?'disabled':''}>${busy?t('Waiting for provider…','प्रदाता की प्रतीक्षा…'):t('Ask AI','एआई से पूछें')}</button></form>
-    ${answer ? `<div class="notice answer" role="status">${esc(answer)}</div>` : ''}` : ''}</article>`;
+    <article class="card pane spaced"><h2>${topicText(topic.title)}</h2><p>${topicText(topic.body)}</p>
+    <div class="actions"><button type="button" class="primary" data-action="explain-guide" aria-controls="guide-explanation" ${explanation?.loading || explanation?.kind === 'ai' ? 'disabled' : ''}>${guideExplanationLabel(explanation)}</button>
+    <a class="secondary link" href="${topic.url}" target="_blank" rel="noopener noreferrer">${t('Read source','स्रोत पढ़ें')} · ${topic.source}</a></div>
+    <p class="subtle">${t('The AI provider receives only the selected lesson and language.','एआई सेवा को केवल चुना हुआ पाठ और भाषा भेजी जाती है।')}</p>
+    <div id="guide-explanation" role="status">${guideExplanationContent(explanation)}</div></article>
+    ${api ? `<article class="card pane spaced"><h2>${t('Ask about this lesson','इस पाठ के बारे में पूछें')}</h2><p>${t('Keep personal and financial details out of your question.','प्रश्न में निजी या वित्तीय जानकारी न डालें।')}</p>
+    <form id="ask">${label(t('Your question','आपका प्रश्न'),'<textarea name="question" required maxlength="500" rows="3"></textarea>')}<label class="check"><input name="consent" type="checkbox" required><span>${t('Send this question and lesson to the AI provider.','यह प्रश्न और पाठ एआई प्रदाता को भेजें।')}</span></label>${submit(t('Ask AI','एआई से पूछें'))}
+    <div role="status" class="answer"></div></form></article>` : ''}`;
 }
 function report() {
   const topic = topics.find(s=>s.id==='report');
@@ -256,7 +296,8 @@ app.addEventListener('click', e => {
   if (target) { if (target==='guide' && route==='hub') selectedTopic='upi'; navigate(target); }
   if (nextMode) { mode=nextMode; persist({...state,mode}); render(); document.querySelector(`[data-mode="${mode}"]`)?.focus(); }
   if (chartDay!==undefined) document.querySelector('#chart-detail').textContent=detail;
-  if (topic) { selectedTopic=topic; answer=''; render(); document.querySelector(`[data-topic="${topic}"]`)?.focus(); }
+  if (topic) { selectedTopic=topic; render(); document.querySelector(`[data-topic="${topic}"]`)?.focus(); }
+  if (action==='explain-guide') void explainGuide();
   if (action==='language') { hi=!hi; if(state) persist({...state,language:hi?'hi':'en'}); render(); document.querySelector('[data-action="language"]')?.focus(); }
   if (action==='demo'||action==='empty') { mode='business'; persist({...blank(action==='demo'),language:hi?'hi':'en',mode}); navigate('overview'); }
   if (action==='shield-message' || action==='shield-qr') {
@@ -282,7 +323,7 @@ app.addEventListener('click', e => {
   }
   if (action==='delete' && window.confirm(t('Permanently delete this browser’s ArthSaathi data?','इस ब्राउज़र से ArthSaathi का डेटा हमेशा के लिए मिटाएँ?'))) {
     try { if(!isolatedDemo) localStorage.removeItem(key); } catch { toast(t('Browser blocked data deletion.','ब्राउज़र ने डेटा मिटाने से रोका।')); return; }
-    clearAssistant(); state=null; draft=''; result=null; selectedSale=''; answer=''; navigate('overview');
+    clearAssistant(); state=null; draft=''; result=null; selectedSale=''; navigate('overview');
   }
 });
 app.addEventListener('submit', async e => {
@@ -320,17 +361,27 @@ app.addEventListener('submit', async e => {
       persist(confirmSale(state,selectedSale,data.has('checked')));
       toast(t('Confirmation recorded and income added.','पुष्टि दर्ज हुई और आमदनी जुड़ी।'));
     }
-    if(type==='ask' && api && !busy && data.has('consent')) {
-      const question=get('question'), topic=selectedTopic;
-      if(!question) throw Error('field');
-      busy=true; answer=''; render();
+    if (type==='ask') {
+      const button = form.querySelector('button[type="submit"]');
+      const feedback = form.querySelector('[role="status"]');
+      if (!api || button.disabled || !data.has('consent')) return;
+      const question = get('question');
+      if (!question || containsPrivateDetails(question)) {
+        feedback.classList.add('notice');
+        feedback.textContent = t('Enter a question without private numbers or account details.','निजी नंबर या खाता विवरण हटाकर सवाल लिखें।');
+        return;
+      }
+      const language = hi ? 'hi' : 'en';
+      const unavailable = t('AI is temporarily unavailable. You can still read the lesson above.','एआई अभी उपलब्ध नहीं है। आप ऊपर का पाठ पढ़ सकते हैं।');
+      button.disabled = true;
+      feedback.classList.add('notice');
+      feedback.textContent = t('Preparing the answer…','उत्तर तैयार हो रहा है…');
       try {
-        const res=await fetch('./api/guide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question,topic,language:hi?'hi':'en',consent:true})});
-        const payload=await res.json();
-        if(!res.ok||!payload.answer) throw Error('provider');
-        if(selectedTopic===topic) answer=payload.answer;
-      } catch { if(selectedTopic===topic) answer=t('AI is unavailable right now. The sourced lesson is above.','एआई अभी उपलब्ध नहीं है। स्रोत आधारित पाठ ऊपर है।'); }
-      finally { busy=false; if(route==='guide') render(); }
+        const res = await fetch('./api/guide',{method:'POST',signal:AbortSignal.timeout(18_000),headers:{'Content-Type':'application/json'},body:JSON.stringify({question,topic:selectedTopic,language,consent:true})});
+        const payload = res.ok ? await res.json() : null;
+        feedback.textContent = typeof payload?.answer === 'string' && payload.answer.trim() ? payload.answer : unavailable;
+      } catch { feedback.textContent = unavailable; }
+      finally { button.disabled = false; }
       return;
     }
     render();
@@ -364,4 +415,4 @@ wireQrPanel(app, ()=>route==='shield'&&shieldMode==='qr'&&Boolean(state), ()=>hi
 });
 wireAssistant(app, render, ()=>route==='assistant' && Boolean(state));
 render();
-fetch('./api/status').then(r=>r.ok?r.json():null).then(value=>{api=value?.llm===true;if(['guide','assistant'].includes(route)) render();}).catch(()=>{});
+fetch('./api/status').then(r=>r.ok?r.json():null).then(value=>{if(value?.llm===true){api=true;if(['guide','assistant'].includes(route)) render();}}).catch(()=>{});

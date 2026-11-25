@@ -18,6 +18,9 @@ test('local app serves assets and reports that AI is off without credentials', a
     assert.match((await fetch(base + '/qr-worker.js')).headers.get('content-type'),/javascript/);
     assert.match((await fetch(base + '/demos/demo-mismatched-upi.png')).headers.get('content-type'),/image\/png/);
     assert.deepEqual(await (await fetch(base + '/api/status')).json(),{llm:false});
+    const explanation = await (await fetch(base + '/api/guide?topic=upi&language=en')).json();
+    assert.equal(explanation.kind,'guide');
+    assert.match(explanation.answer,/₹500 incoming payment/);
     assert.equal((await fetch(base + '/api/guide',{method:'POST'})).status,503);
     assert.equal((await fetch(base + '/.env')).status,404);
   });
@@ -37,5 +40,9 @@ test('AI endpoint requires consent, forwards lesson only and reads provider text
     assert.equal(requests[0].body.store,false);
     assert.match(requests[0].body.instructions,/incoming credit/);
     assert.equal(requests[0].body.input,'How do I check?');
+    const preset = await fetch(base + '/api/guide?topic=budget&language=hi');
+    assert.deepEqual(await preset.json(),{kind:'ai',answer:'Test fixture.'});
+    assert.match(requests[1].body.instructions,/natural Hindi.*मासिक बजट/);
+    assert.match(requests[1].body.input,/one clearly fictional example/);
   });
 });

@@ -70,8 +70,8 @@
         <p>Browser <code>localStorage</code> stores the regular workspace and saved review summaries. Web Speech handles dictation and read-aloud where supported. The browser's speech service may process audio.</p>
       </article>
       <article>
-        <h3>Deployment and assistant</h3>
-        <p>Vercel serves the static demo. Built-in answers run in the browser. An optional Node server exposes <code>/api/status</code>, <code>/api/guide</code> and <code>/api/assistant</code>. With a configured model, server credentials and user consent, both POST endpoints can call the OpenAI Responses API. Only the assistant endpoint enables the web search tool. That integration is disabled on the static demo.</p>
+        <h3>MoneyGuide and assistant</h3>
+        <p>On Vercel, <code>/api/guide</code> requests a MoneyGuide lesson explanation through AI Gateway and Google Gemini. The request uses the selected lesson and language. If the service is unavailable, MoneyGuide shows a labeled built-in example. Ask ArthSaathi serves bundled answers on the public demo. A trusted Node deployment can enable typed lesson questions and assistant web answers through the OpenAI Responses API with explicit consent.</p>
       </article>
       <article>
         <h3>Payment boundary</h3>

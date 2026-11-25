@@ -28,7 +28,7 @@ Open [Why ArthSaathi?](https://arthsaathi-rosy.vercel.app/mentor.html) for the c
 
 - **Overview and MoneyManager** show separate personal and business ledgers, monthly totals, daily charts, spending budgets and digital khata. Money is represented as integer paise. Pending dues are tracked apart from collected income.
 - **MoneyShield** checks pasted text, URL structure and QR images locally. It looks for credential requests, fake payment and refund tactics, KYC pressure, remote access and lookalike links. The result shows which indicators matched and what to check next. See the [dataset audit and before/after evaluation](benchmarks/README.md).
-- **MoneyGuide** contains bilingual lessons from RBI, SEBI Investor and the National Cyber Crime Reporting Portal. It works with the optional AI endpoint off.
+- **MoneyGuide** offers English and Hindi lessons from RBI, SEBI Investor and the National Cyber Crime Reporting Portal. **Explain with AI** requests a plain-language explanation of the selected lesson with a fictional example. If the AI service is unavailable, it shows a labeled MoneyGuide example.
 - **Intelligence Hub** compares a QR against an open sale’s expected amount and an independently known UPI ID when supplied. It can save both message and QR summaries on that sale. One local state write changes sale status and adds a receipt after separate user confirmation of incoming credit. Repeat confirmations are rejected.
 - **Onboarding, reporting and privacy** include a clean or fictional workspace, India’s 1930 helpline and official complaint portal, optional scan-summary history, export and whole-workspace deletion.
 
@@ -37,7 +37,7 @@ Browser UI (English / हिन्दी)
     ├── MoneyShield → local rule engine
     ├── MoneyManager → paise ledger, budgets and dues
     ├── Intelligence Hub → risk summary → sale → user-confirmed receipt
-    └── MoneyGuide → curated lessons → optional consent-based Node endpoint
+    └── MoneyGuide → curated lessons → preset AI explanation or built-in example
            Browser localStorage ← ledger, settings and opted-in summaries
 ```
 
@@ -51,15 +51,17 @@ Images and decoded values stay in the current screen. MoneyShield does not open 
 
 ## Deploy
 
-**Static hosting (recommended for judging).** Run `npm run build` and publish the contents of `dist/` as a static site. For Vercel, import the project folder or select it as the root directory. The included `vercel.json` sets the build command and output folder. The static deployment keeps AI disabled.
+**Vercel (public demo).** Deploy the project root so Vercel builds `dist/` and detects `api/guide.js`. The function uses Vercel AI Gateway with project OIDC and Google Gemini 2.5 Flash Lite. It accepts only the selected lesson and language, then sends the curated lesson and a fixed request for an example to the model. The provider response is cached by lesson and language. The Vercel team must complete AI Gateway verification before it can make model requests. The guide shows a labeled built-in example when the Gateway is unavailable. [AI Gateway setup](https://vercel.com/docs/ai-gateway/getting-started) · [Project OIDC](https://vercel.com/docs/ai-gateway/authentication-and-byok/oidc)
 
-**Optional real AI (local or trusted Node host).** Copy `.env.example` to `.env`, set `OPENAI_API_KEY` and `OPENAI_MODEL` to values from your OpenAI project, then run:
+**Static hosting.** Run `npm run build` and publish `dist/`. MoneyGuide uses the built-in examples when hosted without a function.
+
+**Optional typed AI questions (local or trusted Node host).** Copy `.env.example` to `.env`, set `OPENAI_API_KEY` and `OPENAI_MODEL` to values from your OpenAI project, then run:
 
 ```sh
 node --env-file=.env server.mjs
 ```
 
-For a Node host, set those environment variables using the host's secret settings, use `npm start`, and configure the required `HOST` and `PORT`. The same-origin endpoint calls the OpenAI Responses API. It sends the selected curated lesson, language and explicitly consented question. The endpoint is rate-limited in memory and meant for a trusted demo. Keep it off on unauthenticated public deployments. The app never sends payment messages, ledger records or dues to the provider. [Responses API reference](https://developers.openai.com/api/reference/resources/responses/methods/create)
+For a Node host, set those environment variables using the host's secret settings, use `npm start`, and configure the required `HOST` and `PORT`. The same-origin endpoint uses the OpenAI Responses API for preset explanations and for typed lesson questions with explicit consent. The endpoint is rate-limited in memory and meant for a trusted demo. Keep typed questions on trusted deployments. [Responses API reference](https://developers.openai.com/api/reference/resources/responses/methods/create)
 
 ## Data and scope
 
